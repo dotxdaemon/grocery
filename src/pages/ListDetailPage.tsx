@@ -21,7 +21,7 @@ import { Textarea } from '../components/ui/textarea'
 import { DEFAULT_CATEGORY_ORDER } from '../domain/categories'
 import { buildHistorySuggestions } from '../domain/history'
 import { sortItems } from '../domain/sort'
-import type { Item, ItemHistoryEntry } from '../domain/types'
+import type { Item, ItemHistoryEntry, QuantityUnit } from '../domain/types'
 import { useAppStore } from '../state/appStore'
 import { formatRelativeTime } from '../lib/time'
 import { cn } from '../lib/cn'
@@ -142,7 +142,7 @@ function EditItemDialog({ item, categories, onSave }: EditItemProps) {
                   name: form.name.trim() || item.name,
                   nameOriginal: form.name.trim() || item.nameOriginal,
                   quantity: form.quantity ? Number.parseFloat(form.quantity) : undefined,
-                  unit: form.unit || undefined,
+                  unit: (form.unit || undefined) as QuantityUnit | undefined,
                   notes: form.notes,
                   categoryId: form.categoryId || undefined,
                 })
