@@ -30,20 +30,17 @@ function NavLinks() {
 }
 
 function AppShell() {
-  const { init, status, error, lastUndo, undo } = useAppStore((state) => ({
-    init: state.init,
-    status: state.status,
-    error: state.error,
-    lastUndo: state.lastUndo,
-    undo: state.undo,
-  }))
+  const init = useAppStore((state) => state.init)
+  const status = useAppStore((state) => state.status)
+  const error = useAppStore((state) => state.error)
+  const lastUndo = useAppStore((state) => state.lastUndo)
+  const undo = useAppStore((state) => state.undo)
 
   useEffect(() => {
     if (status === 'idle') {
       init()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status])
+  }, [status, init])
 
   if (status === 'idle') {
     return (
