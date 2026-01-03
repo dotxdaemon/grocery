@@ -36,7 +36,7 @@ export async function loadFromIndexedDb(): Promise<ExportPayload> {
 }
 
 export async function saveToIndexedDb(payload: ExportPayload): Promise<void> {
-  await db.transaction('rw', db.lists, db.items, db.categories, db.itemHistory, db.storeProfiles, async () => {
+  await db.transaction('rw', [db.lists, db.items, db.categories, db.itemHistory, db.storeProfiles], async () => {
     await Promise.all([
       db.lists.clear(),
       db.items.clear(),

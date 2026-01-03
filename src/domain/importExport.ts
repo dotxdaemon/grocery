@@ -16,7 +16,7 @@ export function validateImportedData(payload: unknown): ImportResult {
   const incoming = payload as Partial<ExportPayload>
   const errors: string[] = []
 
-  const ensureArray = <T>(value: unknown, label: string): T[] => {
+  const ensureArray = (value: unknown, label: string): unknown[] => {
     if (!Array.isArray(value)) {
       errors.push(`${label} must be an array`)
       return []
@@ -25,7 +25,7 @@ export function validateImportedData(payload: unknown): ImportResult {
   }
 
   const lists = ensureArray(incoming.lists, 'lists').filter(
-    (list): list is ExportPayload['lists'][number] =>
+    (list: any): list is ExportPayload['lists'][number] =>
       typeof list?.id === 'string' &&
       list.id.trim() !== '' &&
       typeof list.name === 'string' &&
@@ -38,7 +38,7 @@ export function validateImportedData(payload: unknown): ImportResult {
   const listIds = new Set(lists.map((list) => list.id))
 
   const items = ensureArray(incoming.items, 'items').filter(
-    (item): item is ExportPayload['items'][number] =>
+    (item: any): item is ExportPayload['items'][number] =>
       typeof item?.id === 'string' &&
       item.id.trim() !== '' &&
       typeof item.listId === 'string' &&
@@ -52,7 +52,7 @@ export function validateImportedData(payload: unknown): ImportResult {
 
   const categoriesSource = ensureArray(incoming.categories, 'categories')
   const categories = categoriesSource.filter(
-    (category): category is ExportPayload['categories'][number] =>
+    (category: any): category is ExportPayload['categories'][number] =>
       typeof category?.id === 'string' &&
       typeof category.name === 'string' &&
       typeof category.defaultOrder === 'number',
@@ -60,7 +60,7 @@ export function validateImportedData(payload: unknown): ImportResult {
 
   const itemHistorySource = ensureArray(incoming.itemHistory, 'itemHistory')
   const itemHistory = itemHistorySource.filter(
-    (entry): entry is ExportPayload['itemHistory'][number] =>
+    (entry: any): entry is ExportPayload['itemHistory'][number] =>
       typeof entry?.id === 'string' &&
       typeof entry.nameCanonical === 'string' &&
       typeof entry.lastUsedAt === 'number' &&
@@ -70,7 +70,7 @@ export function validateImportedData(payload: unknown): ImportResult {
 
   const storeProfilesSource = ensureArray(incoming.storeProfiles, 'storeProfiles')
   const storeProfiles = storeProfilesSource.filter(
-    (store): store is ExportPayload['storeProfiles'][number] =>
+    (store: any): store is ExportPayload['storeProfiles'][number] =>
       typeof store?.id === 'string' &&
       typeof store.name === 'string' &&
       Array.isArray(store.aisleOrder),
