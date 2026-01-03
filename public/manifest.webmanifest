@@ -1,0 +1,14 @@
+{
+  "name": "Grocery PWA",
+  "short_name": "Groceries",
+  "description": "Offline-first grocery list with history and multiple lists.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b1221",
+  "theme_color": "#0f172a",
+  "icons": [
+    { "src": "/icons/icon-192.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/icons/icon-512.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/icons/icon-512-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
