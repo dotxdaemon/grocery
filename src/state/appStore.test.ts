@@ -1,27 +1,12 @@
 // ABOUTME: Verifies critical behaviors of the Zustand app store.
 // ABOUTME: Covers list creation, quick-add flows, purchase toggles, and undo snapshots.
 import { beforeEach, describe, expect, it } from 'vitest'
-import { DEFAULT_CATEGORIES } from '../domain/categories'
 import { useAppStore } from './appStore'
-
-const resetStore = () => {
-  useAppStore.setState({
-    status: 'ready',
-    storageMode: 'fallback',
-    lists: [],
-    items: [],
-    categories: DEFAULT_CATEGORIES,
-    itemHistory: [],
-    storeProfiles: [],
-    preferences: { movePurchasedToBottom: {}, searchQueryByList: {} },
-    lastUndo: undefined,
-    error: undefined,
-  })
-}
+import { resetAppStore } from '../test/storeHelpers'
 
 describe('app store', () => {
   beforeEach(() => {
-    resetStore()
+    resetAppStore()
   })
 
   it('creates a list and tracks undo', async () => {

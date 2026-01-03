@@ -321,49 +321,31 @@ function QuickAddBar({ categoryOptions, onAdd, historySource, onToggleFavorite }
 export function ListDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const {
-    list,
-    items,
-    categories,
-    itemHistory,
-    preferences,
-    addItemQuick,
-    toggleItemPurchased,
-    clearPurchased,
-    setSortMode,
-    setMovePurchasedToBottom,
-    setSearchQuery,
-    updateItem,
-    deleteItem,
-    deleteList,
-    reorderItems,
-    toggleFavoriteHistory,
-    setActiveList,
-  } = useAppStore((state) => ({
-    list: state.lists.find((entry) => entry.id === id),
-    items: state.items,
-    categories: state.categories,
-    itemHistory: state.itemHistory,
-    preferences: state.preferences,
-    addItemQuick: state.addItemQuick,
-    toggleItemPurchased: state.toggleItemPurchased,
-    clearPurchased: state.clearPurchased,
-    setSortMode: state.setSortMode,
-    setMovePurchasedToBottom: state.setMovePurchasedToBottom,
-    setSearchQuery: state.setSearchQuery,
-    updateItem: state.updateItem,
-    deleteItem: state.deleteItem,
-    deleteList: state.deleteList,
-    reorderItems: state.reorderItems,
-    toggleFavoriteHistory: state.toggleFavoriteHistory,
-    setActiveList: state.setActiveList,
-  }))
+  const safeId = id ?? ''
+  const lists = useAppStore((state) => state.lists)
+  const items = useAppStore((state) => state.items)
+  const categories = useAppStore((state) => state.categories)
+  const itemHistory = useAppStore((state) => state.itemHistory)
+  const preferences = useAppStore((state) => state.preferences)
+  const addItemQuick = useAppStore((state) => state.addItemQuick)
+  const toggleItemPurchased = useAppStore((state) => state.toggleItemPurchased)
+  const clearPurchased = useAppStore((state) => state.clearPurchased)
+  const setSortMode = useAppStore((state) => state.setSortMode)
+  const setMovePurchasedToBottom = useAppStore((state) => state.setMovePurchasedToBottom)
+  const setSearchQuery = useAppStore((state) => state.setSearchQuery)
+  const updateItem = useAppStore((state) => state.updateItem)
+  const deleteItem = useAppStore((state) => state.deleteItem)
+  const deleteList = useAppStore((state) => state.deleteList)
+  const reorderItems = useAppStore((state) => state.reorderItems)
+  const toggleFavoriteHistory = useAppStore((state) => state.toggleFavoriteHistory)
+  const setActiveList = useAppStore((state) => state.setActiveList)
+
+  const list = useMemo(() => lists.find((entry) => entry.id === safeId), [lists, safeId])
 
   useEffect(() => {
-    if (id) setActiveList(id)
-  }, [id, setActiveList])
+    if (safeId) setActiveList(safeId)
+  }, [safeId, setActiveList])
 
-  const safeId = id ?? ''
   const sortMode = list?.sortMode ?? 'category'
   const categoryOrder = list?.categoryOrder ?? DEFAULT_CATEGORY_ORDER
   const movePurchased = preferences.movePurchasedToBottom[safeId] ?? true
