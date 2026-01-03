@@ -21,10 +21,10 @@ export default defineConfig({
         background_color: '#0b1221',
         display: 'standalone',
         icons: [
-          { src: '/icons/icon-192.svg', sizes: 'any', type: 'image/svg+xml' },
-          { src: '/icons/icon-512.svg', sizes: 'any', type: 'image/svg+xml' },
+          { src: '/grocery/icons/icon-192.svg', sizes: 'any', type: 'image/svg+xml' },
+          { src: '/grocery/icons/icon-512.svg', sizes: 'any', type: 'image/svg+xml' },
           {
-            src: '/icons/icon-512-maskable.svg',
+            src: '/grocery/icons/icon-512-maskable.svg',
             sizes: 'any',
             type: 'image/svg+xml',
             purpose: 'maskable',
