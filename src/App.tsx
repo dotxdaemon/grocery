@@ -96,7 +96,7 @@ function AppShell() {
 
 export default function App() {
   return (
-    <Router>
+    <Router basename="/grocery">
       <AppShell />
     </Router>
   )
