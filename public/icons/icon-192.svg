@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-labelledby="title desc">
+  <title>Grocery PWA Icon 192</title>
+  <desc>Basket icon in primary colors for the Grocery PWA</desc>
+  <rect width="192" height="192" rx="28" fill="#0f172a"/>
+  <path d="M54 78h84l-10 56H64z" fill="#38bdf8"/>
+  <path d="M78 78 90 52h12l-12 26z" fill="#f8fafc"/>
+  <circle cx="80" cy="138" r="8" fill="#f8fafc"/>
+  <circle cx="120" cy="138" r="8" fill="#f8fafc"/>
+</svg>

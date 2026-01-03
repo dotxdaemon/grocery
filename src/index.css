@@ -1,0 +1,81 @@
+/* ABOUTME: Sets global Tailwind layers and design tokens for the grocery app. */
+/* ABOUTME: Provides light/dark themes, accessibility tweaks, and typography defaults. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 215 33% 5%;
+  --foreground: 210 40% 98%;
+  --card: 216 28% 9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 217 30% 12%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 214 90% 58%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 214 32% 17%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 215 27% 20%;
+  --muted-foreground: 217 15% 65%;
+  --accent: 156 72% 50%;
+  --accent-foreground: 220 23% 10%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 215 27% 25%;
+  --input: 215 27% 25%;
+  --ring: 214 90% 58%;
+  --radius: 0.75rem;
+}
+
+.light {
+  --background: 210 40% 98%;
+  --foreground: 220 21% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 21% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 21% 11%;
+  --primary: 214 90% 58%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 215 15% 90%;
+  --secondary-foreground: 220 21% 11%;
+  --muted: 215 15% 92%;
+  --muted-foreground: 222 15% 35%;
+  --accent: 156 72% 40%;
+  --accent-foreground: 220 23% 10%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214 32% 86%;
+  --input: 214 32% 86%;
+  --ring: 214 90% 58%;
+}
+
+* {
+  @apply border-border;
+}
+
+body {
+  @apply bg-background text-foreground antialiased;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+}
+
+a {
+  @apply text-primary hover:underline;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,4 @@
+# ABOUTME: Records workspace-level pnpm settings for build approvals.
+# ABOUTME: Allows esbuild postinstall scripts required by dependencies.
+onlyBuiltDependencies:
+  - esbuild
