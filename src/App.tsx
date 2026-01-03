@@ -1,6 +1,6 @@
 // ABOUTME: Hosts the top-level layout and routing for the grocery PWA.
 // ABOUTME: Boots state, renders navigation, and wires pages together.
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Link, Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom'
 import { Button } from './components/ui/button'
 import { useAppStore } from './state/appStore'
@@ -35,13 +35,14 @@ function AppShell() {
   const error = useAppStore((state) => state.error)
   const lastUndo = useAppStore((state) => state.lastUndo)
   const undo = useAppStore((state) => state.undo)
+  const hasInitialized = useRef(false)
 
   useEffect(() => {
-    if (status === 'idle') {
+    if (!hasInitialized.current) {
+      hasInitialized.current = true
       init()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status])
+  }, [])
 
   if (status === 'idle') {
     return (
