@@ -40,7 +40,8 @@ function AppShell() {
     if (status === 'idle') {
       init()
     }
-  }, [status, init])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status])
 
   if (status === 'idle') {
     return (
