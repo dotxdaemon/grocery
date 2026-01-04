@@ -15,14 +15,15 @@ function NavLinks() {
     { to: '/settings', label: 'Settings' },
   ]
   return (
-    <nav className="flex gap-3 text-sm font-medium">
+    <nav className="flex gap-2 text-xs font-semibold uppercase tracking-[0.08em]">
       {links.map((link) => (
         <Link
           key={link.to}
           to={link.to}
-          className={`rounded-md px-3 py-1 hover:bg-secondary ${location.pathname === link.to ? 'bg-secondary text-secondary-foreground' : 'text-foreground'}`}
+          className={`relative overflow-hidden rounded-full border border-border/60 px-4 py-2 transition hover:border-primary/40 hover:text-primary ${location.pathname === link.to ? 'bg-primary/15 text-primary shadow-[0_0_24px_rgba(233,118,255,0.2)]' : 'text-muted-foreground'}`}
         >
-          {link.label}
+          <span className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent opacity-60" aria-hidden />
+          <span className="relative">{link.label}</span>
         </Link>
       ))}
     </nav>
@@ -56,26 +57,57 @@ function AppShell() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Link to="/" className="text-lg font-semibold tracking-tight">
-            Grocery PWA
-          </Link>
+    <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div
+          className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(233,118,255,0.18),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(56,189,248,0.18),transparent_30%),radial-gradient(circle_at_75%_75%,rgba(34,211,238,0.18),transparent_35%)] blur-3xl"
+          aria-hidden
+        />
+        <div
+          className="absolute inset-0 bg-[linear-gradient(115deg,rgba(255,255,255,0.05)_0%,rgba(255,255,255,0.02)_40%,rgba(255,255,255,0)_65%)]"
+          aria-hidden
+        />
+        <div
+          className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:140px_140px] opacity-60"
+          aria-hidden
+        />
+      </div>
+      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 shadow-[0_10px_30px_rgba(0,0,0,0.45)] backdrop-blur">
+        <div className="relative mx-auto flex max-w-6xl items-start justify-between px-4 py-4">
+          <div className="relative flex items-start gap-3">
+            <div className="absolute -left-3 -top-3 h-12 w-12 rounded-full bg-primary/25 blur-2xl" aria-hidden />
+            <Link to="/" className="relative flex flex-col leading-none no-underline">
+              <span className="text-xs font-semibold uppercase tracking-[0.32em] text-primary drop-shadow-[0_0_14px_rgba(233,118,255,0.35)]">
+                Kowloon Night Market
+              </span>
+              <span className="text-sm font-medium text-muted-foreground">Neon shopping companion</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.22em] text-secondary drop-shadow-[0_0_10px_rgba(56,189,248,0.35)]">
+                Generic romance promenade
+              </span>
+            </Link>
+            <div className="hidden items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.12em] text-primary shadow-[0_0_24px_rgba(233,118,255,0.25)] sm:flex">
+              <span className="size-2 rounded-full bg-accent shadow-[0_0_0_6px_rgba(45,212,191,0.18)]" aria-hidden />
+              <span>Night runner mode</span>
+            </div>
+          </div>
           <NavLinks />
         </div>
+        <div className="h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent opacity-70" aria-hidden />
         {error && (
-          <div className="bg-amber-900 px-4 py-2 text-sm text-amber-100">
+          <div className="bg-amber-900/90 px-4 py-2 text-sm text-amber-100 backdrop-blur">
             {error}
           </div>
         )}
       </header>
-      <main className="mx-auto max-w-6xl px-4 pb-24 pt-6">
-        <Routes>
-          <Route path="/" element={<ListsPage />} />
-          <Route path="/list/:id" element={<ListDetailPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-        </Routes>
+      <main className="relative mx-auto max-w-6xl px-4 pb-24 pt-10">
+        <div className="pointer-events-none absolute inset-x-8 top-2 h-24 rounded-full bg-primary/10 blur-3xl" aria-hidden />
+        <div className="relative rounded-2xl border border-border/60 bg-card/80 p-6 shadow-[0_30px_120px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+          <Routes>
+            <Route path="/" element={<ListsPage />} />
+            <Route path="/list/:id" element={<ListDetailPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Routes>
+        </div>
       </main>
       {lastUndo && (
         <div className="fixed bottom-4 left-1/2 z-50 w-full max-w-xl -translate-x-1/2 rounded-lg border border-border bg-card/90 p-3 shadow-lg backdrop-blur">
