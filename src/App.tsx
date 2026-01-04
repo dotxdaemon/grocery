@@ -80,7 +80,7 @@ function AppShell() {
                 grocery list
               </span>
               <span className="text-sm font-medium text-muted-foreground">
-                Kowloon Generic Romance errands
+                Night market errands
               </span>
             </Link>
           </div>
