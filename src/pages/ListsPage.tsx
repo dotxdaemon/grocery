@@ -9,16 +9,13 @@ import { useAppStore } from '../state/appStore'
 import { formatRelativeTime } from '../lib/time'
 
 export function ListsPage() {
-  const { lists, items, createList, renameList, reorderLists, deleteList, setActiveList } =
-    useAppStore((state) => ({
-      lists: state.lists,
-      items: state.items,
-      createList: state.createList,
-      renameList: state.renameList,
-      reorderLists: state.reorderLists,
-      deleteList: state.deleteList,
-      setActiveList: state.setActiveList,
-    }))
+  const lists = useAppStore((state) => state.lists)
+  const items = useAppStore((state) => state.items)
+  const createList = useAppStore((state) => state.createList)
+  const renameList = useAppStore((state) => state.renameList)
+  const reorderLists = useAppStore((state) => state.reorderLists)
+  const deleteList = useAppStore((state) => state.deleteList)
+  const setActiveList = useAppStore((state) => state.setActiveList)
   const [newListName, setNewListName] = useState('')
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')

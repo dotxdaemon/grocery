@@ -11,33 +11,18 @@ import { DEFAULT_CATEGORY_ORDER } from '../domain/categories'
 import { formatRelativeTime } from '../lib/time'
 
 export function SettingsPage() {
-  const {
-    storageMode,
-    categories,
-    lists,
-    preferences,
-    itemHistory,
-    renameCategory,
-    reorderCategories,
-    resetCategories,
-    toggleFavoriteHistory,
-    addItemQuick,
-    exportData,
-    importData,
-  } = useAppStore((state) => ({
-    storageMode: state.storageMode,
-    categories: state.categories,
-    lists: state.lists,
-    preferences: state.preferences,
-    itemHistory: state.itemHistory,
-    renameCategory: state.renameCategory,
-    reorderCategories: state.reorderCategories,
-    resetCategories: state.resetCategories,
-    toggleFavoriteHistory: state.toggleFavoriteHistory,
-    addItemQuick: state.addItemQuick,
-    exportData: state.exportData,
-    importData: state.importData,
-  }))
+  const storageMode = useAppStore((state) => state.storageMode)
+  const categories = useAppStore((state) => state.categories)
+  const lists = useAppStore((state) => state.lists)
+  const preferences = useAppStore((state) => state.preferences)
+  const itemHistory = useAppStore((state) => state.itemHistory)
+  const renameCategory = useAppStore((state) => state.renameCategory)
+  const reorderCategories = useAppStore((state) => state.reorderCategories)
+  const resetCategories = useAppStore((state) => state.resetCategories)
+  const toggleFavoriteHistory = useAppStore((state) => state.toggleFavoriteHistory)
+  const addItemQuick = useAppStore((state) => state.addItemQuick)
+  const exportData = useAppStore((state) => state.exportData)
+  const importData = useAppStore((state) => state.importData)
 
   const [renameDrafts, setRenameDrafts] = useState<Record<string, string>>({})
   const [importMessage, setImportMessage] = useState<string | null>(null)

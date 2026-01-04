@@ -26,6 +26,9 @@ import { useAppStore } from '../state/appStore'
 import { formatRelativeTime } from '../lib/time'
 import { cn } from '../lib/cn'
 
+const UNASSIGNED_CATEGORY_VALUE = 'category-unassigned'
+const AUTO_CATEGORY_VALUE = 'category-auto'
+
 const quantityLabel = (item: Item) => {
   if (item.quantity === undefined) return ''
   const value = Number.isInteger(item.quantity) ? item.quantity : item.quantity.toFixed(2)
@@ -45,7 +48,7 @@ function EditItemDialog({ item, categories, onSave }: EditItemProps) {
     quantity: item.quantity?.toString() ?? '',
     unit: item.unit ?? '',
     notes: item.notes ?? '',
-    categoryId: item.categoryId ?? '',
+    categoryId: item.categoryId ?? UNASSIGNED_CATEGORY_VALUE,
   })
 
   const resetForm = () =>
@@ -54,7 +57,7 @@ function EditItemDialog({ item, categories, onSave }: EditItemProps) {
       quantity: item.quantity?.toString() ?? '',
       unit: item.unit ?? '',
       notes: item.notes ?? '',
-      categoryId: item.categoryId ?? '',
+      categoryId: item.categoryId ?? UNASSIGNED_CATEGORY_VALUE,
     })
 
   return (
@@ -110,15 +113,15 @@ function EditItemDialog({ item, categories, onSave }: EditItemProps) {
               onValueChange={(value) => setForm((prev) => ({ ...prev, categoryId: value }))}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Pick a category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Unassigned</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
+              <SelectValue placeholder="Pick a category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={UNASSIGNED_CATEGORY_VALUE}>Unassigned</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
               </SelectContent>
             </Select>
           </div>
@@ -144,7 +147,7 @@ function EditItemDialog({ item, categories, onSave }: EditItemProps) {
                   quantity: form.quantity ? Number.parseFloat(form.quantity) : undefined,
                   unit: (form.unit || undefined) as QuantityUnit | undefined,
                   notes: form.notes,
-                  categoryId: form.categoryId || undefined,
+                  categoryId: form.categoryId === UNASSIGNED_CATEGORY_VALUE ? undefined : form.categoryId,
                 })
                 setOpen(false)
               }}
@@ -236,7 +239,7 @@ interface QuickAddProps {
 
 function QuickAddBar({ categoryOptions, onAdd, historySource, onToggleFavorite }: QuickAddProps) {
   const [input, setInput] = useState('')
-  const [categoryId, setCategoryId] = useState('')
+  const [categoryId, setCategoryId] = useState(AUTO_CATEGORY_VALUE)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const suggestions = useMemo(
     () => buildHistorySuggestions(input.trim(), historySource),
@@ -247,8 +250,9 @@ function QuickAddBar({ categoryOptions, onAdd, historySource, onToggleFavorite }
     event.preventDefault()
     if (!input.trim()) return
     setIsSubmitting(true)
-    await onAdd(input, categoryId || undefined)
+    await onAdd(input, categoryId === AUTO_CATEGORY_VALUE ? undefined : categoryId)
     setInput('')
+    setCategoryId(AUTO_CATEGORY_VALUE)
     setIsSubmitting(false)
   }
 
@@ -256,6 +260,8 @@ function QuickAddBar({ categoryOptions, onAdd, historySource, onToggleFavorite }
     setInput(name)
     if (suggestedCategory) {
       setCategoryId(suggestedCategory)
+    } else {
+      setCategoryId(AUTO_CATEGORY_VALUE)
     }
   }
 
@@ -276,7 +282,7 @@ function QuickAddBar({ categoryOptions, onAdd, historySource, onToggleFavorite }
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Auto</SelectItem>
+                <SelectItem value={AUTO_CATEGORY_VALUE}>Auto</SelectItem>
                 {categoryOptions.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
@@ -321,49 +327,31 @@ function QuickAddBar({ categoryOptions, onAdd, historySource, onToggleFavorite }
 export function ListDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const {
-    list,
-    items,
-    categories,
-    itemHistory,
-    preferences,
-    addItemQuick,
-    toggleItemPurchased,
-    clearPurchased,
-    setSortMode,
-    setMovePurchasedToBottom,
-    setSearchQuery,
-    updateItem,
-    deleteItem,
-    deleteList,
-    reorderItems,
-    toggleFavoriteHistory,
-    setActiveList,
-  } = useAppStore((state) => ({
-    list: state.lists.find((entry) => entry.id === id),
-    items: state.items,
-    categories: state.categories,
-    itemHistory: state.itemHistory,
-    preferences: state.preferences,
-    addItemQuick: state.addItemQuick,
-    toggleItemPurchased: state.toggleItemPurchased,
-    clearPurchased: state.clearPurchased,
-    setSortMode: state.setSortMode,
-    setMovePurchasedToBottom: state.setMovePurchasedToBottom,
-    setSearchQuery: state.setSearchQuery,
-    updateItem: state.updateItem,
-    deleteItem: state.deleteItem,
-    deleteList: state.deleteList,
-    reorderItems: state.reorderItems,
-    toggleFavoriteHistory: state.toggleFavoriteHistory,
-    setActiveList: state.setActiveList,
-  }))
+  const safeId = id ?? ''
+  const lists = useAppStore((state) => state.lists)
+  const items = useAppStore((state) => state.items)
+  const categories = useAppStore((state) => state.categories)
+  const itemHistory = useAppStore((state) => state.itemHistory)
+  const preferences = useAppStore((state) => state.preferences)
+  const addItemQuick = useAppStore((state) => state.addItemQuick)
+  const toggleItemPurchased = useAppStore((state) => state.toggleItemPurchased)
+  const clearPurchased = useAppStore((state) => state.clearPurchased)
+  const setSortMode = useAppStore((state) => state.setSortMode)
+  const setMovePurchasedToBottom = useAppStore((state) => state.setMovePurchasedToBottom)
+  const setSearchQuery = useAppStore((state) => state.setSearchQuery)
+  const updateItem = useAppStore((state) => state.updateItem)
+  const deleteItem = useAppStore((state) => state.deleteItem)
+  const deleteList = useAppStore((state) => state.deleteList)
+  const reorderItems = useAppStore((state) => state.reorderItems)
+  const toggleFavoriteHistory = useAppStore((state) => state.toggleFavoriteHistory)
+  const setActiveList = useAppStore((state) => state.setActiveList)
+
+  const list = useMemo(() => lists.find((entry) => entry.id === safeId), [lists, safeId])
 
   useEffect(() => {
-    if (id) setActiveList(id)
-  }, [id, setActiveList])
+    if (safeId) setActiveList(safeId)
+  }, [safeId, setActiveList])
 
-  const safeId = id ?? ''
   const sortMode = list?.sortMode ?? 'category'
   const categoryOrder = list?.categoryOrder ?? DEFAULT_CATEGORY_ORDER
   const movePurchased = preferences.movePurchasedToBottom[safeId] ?? true
