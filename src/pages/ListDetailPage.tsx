@@ -2,6 +2,7 @@
 // ABOUTME: Supports search, sorting, manual reordering, editing, and history suggestions.
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft, ChevronDown, ChevronUp, MoreHorizontal, Search, Sparkles, Tag } from 'lucide-react'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Card } from '../components/ui/card'
@@ -21,13 +22,15 @@ import { Textarea } from '../components/ui/textarea'
 import { DEFAULT_CATEGORY_ORDER } from '../domain/categories'
 import { buildHistorySuggestions } from '../domain/history'
 import { sortItems } from '../domain/sort'
-import type { Item, ItemHistoryEntry, QuantityUnit } from '../domain/types'
+import type { Item, ItemHistoryEntry, QuantityUnit, SortMode } from '../domain/types'
 import { useAppStore } from '../state/appStore'
 import { formatRelativeTime } from '../lib/time'
 import { cn } from '../lib/cn'
 
 const UNASSIGNED_CATEGORY_VALUE = 'category-unassigned'
 const AUTO_CATEGORY_VALUE = 'category-auto'
+
+// Component structure: TopBar handles navigation, search, and overflow access; ItemList renders grouped items; AddBar keeps quick entry sticky at the bottom; OverflowSheet gathers secondary actions.
 
 const quantityLabel = (item: Item) => {
   if (item.quantity === undefined) return ''
@@ -185,7 +188,7 @@ function ItemRow({
   categoryOptions,
 }: ItemRowProps) {
   return (
-    <div className="group flex items-start justify-between gap-3 rounded-md border border-border/70 bg-card/70 px-3 py-2">
+    <div className="group flex items-start justify-between gap-3 rounded-2xl bg-card/70 px-3 py-3 ring-1 ring-border/60">
       <div className="flex flex-1 items-start gap-3">
         <Checkbox checked={item.isPurchased} onCheckedChange={onToggle} aria-label={`Toggle ${item.name}`} />
         <div className="space-y-1">
@@ -206,10 +209,10 @@ function ItemRow({
         {manualMode && (
           <div className="flex gap-1">
             <Button variant="ghost" size="sm" onClick={onMoveUp} aria-label="Move item up">
-              ↑
+              <ChevronUp className="size-4" aria-hidden />
             </Button>
             <Button variant="ghost" size="sm" onClick={onMoveDown} aria-label="Move item down">
-              ↓
+              <ChevronDown className="size-4" aria-hidden />
             </Button>
           </div>
         )}
@@ -237,7 +240,7 @@ interface QuickAddProps {
   onToggleFavorite: (id: string) => Promise<void>
 }
 
-function QuickAddBar({ categoryOptions, onAdd, historySource, onToggleFavorite }: QuickAddProps) {
+function AddBar({ categoryOptions, onAdd, historySource, onToggleFavorite }: QuickAddProps) {
   const [input, setInput] = useState('')
   const [categoryId, setCategoryId] = useState(AUTO_CATEGORY_VALUE)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -266,43 +269,16 @@ function QuickAddBar({ categoryOptions, onAdd, historySource, onToggleFavorite }
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card/80 p-3 shadow-sm">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <Input
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            placeholder="Add items fast (e.g., 2 milk, apples 3, 1.5 lb chicken)"
-            aria-label="Quick add item"
-            autoComplete="off"
-          />
-          <div className="flex items-center gap-2">
-            <Select value={categoryId} onValueChange={setCategoryId}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={AUTO_CATEGORY_VALUE}>Auto</SelectItem>
-                {categoryOptions.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button type="submit" disabled={!input.trim() || isSubmitting}>
-              Add
-            </Button>
-          </div>
-        </div>
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/95 backdrop-blur">
+      <div className="mx-auto flex max-w-3xl flex-col gap-2 px-4 py-3">
         {suggestions.length > 0 && (
-          <div className="flex flex-wrap gap-2" aria-label="Saved item suggestions">
+          <div className="flex flex-wrap gap-2 text-sm" aria-label="Saved item suggestions">
             {suggestions.map((entry) => (
-              <div key={entry.id} className="flex items-center gap-1">
+              <div key={entry.id} className="flex items-center gap-1 rounded-full bg-card/80 px-3 py-1 ring-1 ring-border/60">
                 <button
                   type="button"
                   onClick={() => applySuggestion(entry.nameCanonical, entry.defaultCategoryId)}
-                  className="flex items-center gap-1 rounded-full border border-border px-3 py-1 text-sm hover:bg-secondary"
+                  className="flex items-center gap-1"
                 >
                   <span>{entry.nameCanonical}</span>
                   {entry.isFavorite && <span aria-hidden>★</span>}
@@ -319,8 +295,209 @@ function QuickAddBar({ categoryOptions, onAdd, historySource, onToggleFavorite }
             ))}
           </div>
         )}
-      </form>
+        <form onSubmit={handleSubmit} className="flex items-center gap-2">
+          <Select value={categoryId} onValueChange={setCategoryId}>
+            <SelectTrigger className="w-12 justify-center rounded-full border-border" aria-label="Choose category">
+              <Tag className="size-4" aria-hidden />
+              <SelectValue className="sr-only" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={AUTO_CATEGORY_VALUE}>Auto</SelectItem>
+              {categoryOptions.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            placeholder="Add items (e.g., 2 milk, apples 3)"
+            aria-label="Quick add item"
+            autoComplete="off"
+            className="flex-1"
+          />
+          <Button type="submit" disabled={!input.trim() || isSubmitting} className="h-11 px-5">
+            Add
+          </Button>
+        </form>
+      </div>
     </div>
+  )
+}
+
+interface TopBarProps {
+  name: string
+  onBack: () => void
+  isSearchOpen: boolean
+  searchQuery: string
+  onSearchChange: (value: string) => void
+  onToggleSearch: () => void
+  onOpenMenu: () => void
+}
+
+function TopBar({
+  name,
+  onBack,
+  isSearchOpen,
+  searchQuery,
+  onSearchChange,
+  onToggleSearch,
+  onOpenMenu,
+}: TopBarProps) {
+  return (
+    <div className="sticky top-4 z-30 -mx-4 bg-background/90 px-4 pb-3 pt-2 backdrop-blur">
+      <div className="flex items-center justify-between gap-2">
+        <Button variant="ghost" size="sm" onClick={onBack} aria-label="Back">
+          <ArrowLeft className="size-4" aria-hidden />
+          <span>Back</span>
+        </Button>
+        <div className="flex flex-1 flex-col items-center gap-1 text-center">
+          <h1 className="text-xl font-semibold leading-tight">{name}</h1>
+          <div className="flex items-center gap-1 text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+            <Sparkles className="size-3" aria-hidden />
+            <span>Kowloon Generic Romance glow</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label="Search list"
+            aria-pressed={isSearchOpen}
+            onClick={onToggleSearch}
+          >
+            <Search className="size-4" aria-hidden />
+          </Button>
+          <Button variant="ghost" size="sm" aria-label="Open list menu" onClick={onOpenMenu}>
+            <MoreHorizontal className="size-4" aria-hidden />
+          </Button>
+        </div>
+      </div>
+      {isSearchOpen && (
+        <div className="mt-3">
+          <Input
+            value={searchQuery}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder="Search items"
+            className="w-full"
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
+interface OverflowSheetProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  sortMode: SortMode
+  movePurchased: boolean
+  onChangeSort: (mode: SortMode) => void
+  onToggleMovePurchased: (value: boolean) => void
+  onClearPurchased: () => void
+  canClearPurchased: boolean
+  onDeleteList: () => void
+  itemCount: number
+  purchasedCount: number
+  updatedAt: number
+}
+
+function OverflowSheet({
+  open,
+  onOpenChange,
+  sortMode,
+  movePurchased,
+  onChangeSort,
+  onToggleMovePurchased,
+  onClearPurchased,
+  canClearPurchased,
+  onDeleteList,
+  itemCount,
+  purchasedCount,
+  updatedAt,
+}: OverflowSheetProps) {
+  const sortOptions: { label: string; helper: string; value: SortMode }[] = [
+    { label: 'Category', helper: 'Group by aisle and section', value: 'category' },
+    { label: 'A–Z', helper: 'Alphabetical for quick scanning', value: 'alpha' },
+    { label: 'Recently added', helper: 'Newest captures first', value: 'recent' },
+    { label: 'Manual', helper: 'Keep your custom order', value: 'manual' },
+  ]
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="bottom-0 left-1/2 top-auto max-w-2xl -translate-x-1/2 translate-y-0 rounded-t-3xl border-border/70 bg-card/95 pb-6 shadow-[0_-20px_80px_rgba(0,0,0,0.55)] sm:rounded-2xl">
+        <DialogHeader className="mb-1">
+          <DialogTitle>List options</DialogTitle>
+          <DialogDescription>Secondary actions stay tucked in this sheet.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Sort</p>
+            <div className="grid grid-cols-2 gap-2">
+              {sortOptions.map((option) => (
+                <Button
+                  key={option.value}
+                  type="button"
+                  variant={sortMode === option.value ? 'primary' : 'outline'}
+                  className="h-auto w-full justify-start gap-2 px-3 py-2 text-left"
+                  onClick={() => onChangeSort(option.value)}
+                  aria-pressed={sortMode === option.value}
+                >
+                  <div className="flex flex-col">
+                    <span className="font-semibold">{option.label}</span>
+                    <span className="text-xs text-muted-foreground">{option.helper}</span>
+                  </div>
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between rounded-2xl bg-secondary/40 px-3 py-2">
+            <div>
+              <p className="text-sm font-medium">Move purchased to bottom</p>
+              <p className="text-xs text-muted-foreground">Keep checked items out of the way.</p>
+            </div>
+            <Checkbox
+              checked={movePurchased}
+              onCheckedChange={(checked) => onToggleMovePurchased(Boolean(checked))}
+              aria-label="Move purchased to bottom"
+            />
+          </div>
+
+          <div className="rounded-2xl border border-border/60 bg-card/70 px-3 py-2 text-sm">
+            <p className="font-medium">List details</p>
+            <p className="text-muted-foreground">
+              {itemCount} items • {purchasedCount} purchased
+            </p>
+            <p className="text-muted-foreground">Updated {formatRelativeTime(updatedAt)}</p>
+          </div>
+
+          <div className="space-y-2 pt-1">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-auto w-full justify-between px-3 py-3"
+              onClick={onClearPurchased}
+              disabled={!canClearPurchased}
+            >
+              <span className="font-medium">Clear purchased</span>
+              <span className="text-xs text-muted-foreground">Remove checked items</span>
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              className="h-auto w-full justify-between px-3 py-3"
+              onClick={onDeleteList}
+            >
+              <span className="font-medium">Delete list</span>
+              <span className="text-xs text-destructive-foreground">Also deletes items</span>
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -347,6 +524,8 @@ export function ListDetailPage() {
   const setActiveList = useAppStore((state) => state.setActiveList)
 
   const list = useMemo(() => lists.find((entry) => entry.id === safeId), [lists, safeId])
+  const [isSearchOpen, setIsSearchOpen] = useState(Boolean(list ? preferences.searchQueryByList[list.id] : false))
+  const [isSheetOpen, setIsSheetOpen] = useState(false)
 
   useEffect(() => {
     if (safeId) setActiveList(safeId)
@@ -356,6 +535,12 @@ export function ListDetailPage() {
   const categoryOrder = list?.categoryOrder ?? DEFAULT_CATEGORY_ORDER
   const movePurchased = preferences.movePurchasedToBottom[safeId] ?? true
   const searchQuery = preferences.searchQueryByList[safeId] ?? ''
+
+  useEffect(() => {
+    if (searchQuery && !isSearchOpen) {
+      setIsSearchOpen(true)
+    }
+  }, [isSearchOpen, searchQuery])
 
   const categoryMap = useMemo(
     () => new Map(categories.map((category) => [category.id, category.name])),
@@ -386,14 +571,19 @@ export function ListDetailPage() {
     )
   }, [sortedItems, searchQuery])
 
-  const grouped = useMemo(
-    () =>
-      filteredItems.reduce<Record<string, Item[]>>((acc, item) => {
-        const key = item.categoryId ?? 'uncategorized'
-        acc[key] = acc[key] ? [...acc[key], item] : [item]
-        return acc
-      }, {}),
-    [filteredItems],
+  const grouped = useMemo(() => {
+    if (sortMode !== 'category') {
+      return { all: filteredItems }
+    }
+    return filteredItems.reduce<Record<string, Item[]>>((acc, item) => {
+      const key = item.categoryId ?? 'uncategorized'
+      acc[key] = acc[key] ? [...acc[key], item] : [item]
+      return acc
+    }, {})
+  }, [filteredItems, sortMode])
+  const purchasedCount = useMemo(
+    () => listItems.filter((item) => item.isPurchased).length,
+    [listItems],
   )
 
   const handleReorderItem = (itemId: string, delta: number) => {
@@ -416,11 +606,8 @@ export function ListDetailPage() {
     [categoryOrder, categories],
   )
 
-  const order = categoryOrder
-  const orderMap = useMemo(
-    () => new Map(order.map((categoryId, index) => [categoryId, index])),
-    [order],
-  )
+  const order = sortMode === 'category' ? categoryOrder : ['all']
+  const orderMap = useMemo(() => new Map(order.map((categoryId, index) => [categoryId, index])), [order])
 
   if (!list || !id) {
     return (
@@ -433,65 +620,39 @@ export function ListDetailPage() {
     )
   }
 
+  const toggleSearch = () => {
+    if (isSearchOpen) {
+      setIsSearchOpen(false)
+      setSearchQuery(id, '')
+    } else {
+      setIsSearchOpen(true)
+    }
+  }
+
+  const handleClearPurchased = () => {
+    if (window.confirm('Clear purchased items?')) clearPurchased(id)
+  }
+
+  const handleDeleteList = () => {
+    if (window.confirm('Delete this list and its items?')) {
+      deleteList(id)
+      navigate('/')
+    }
+  }
+
   return (
-    <div className="space-y-4">
-      <div className="sticky top-14 z-30 border-b border-border bg-background/90 pb-3 pt-2 backdrop-blur">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Link to="/" className="text-sm text-primary hover:underline">
-              ← Back
-            </Link>
-            <h1 className="text-xl font-semibold">{list.name}</h1>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>{filteredItems.length} items</span>
-            <span aria-hidden>•</span>
-            <span>Updated {formatRelativeTime(list.updatedAt)}</span>
-          </div>
-        </div>
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <Input
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(id, event.target.value)}
-            placeholder="Search within this list"
-            className="sm:max-w-xs"
-          />
-          <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setSortMode(id, list.sortMode === 'category' ? 'manual' : 'category')}>
-              Sort: {list.sortMode === 'category' ? 'Category' : 'Manual'}
-            </Button>
-            <div className="flex items-center gap-2 rounded-md border border-border px-2 py-1 text-sm">
-              <Checkbox
-                checked={movePurchased}
-                onCheckedChange={(checked) => setMovePurchasedToBottom(id, Boolean(checked))}
-                aria-label="Move purchased to bottom"
-              />
-              <span>Move purchased to bottom</span>
-            </div>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => {
-                if (window.confirm('Clear purchased items?')) clearPurchased(id)
-              }}
-              disabled={!listItems.some((item) => item.isPurchased)}
-            >
-              Clear purchased
-            </Button>
-          </div>
-        </div>
-      </div>
+    <div className="relative mx-auto max-w-3xl pb-32 pt-4">
+      <TopBar
+        name={list.name}
+        onBack={() => navigate('/')}
+        isSearchOpen={isSearchOpen}
+        searchQuery={searchQuery}
+        onSearchChange={(value) => setSearchQuery(id, value)}
+        onToggleSearch={toggleSearch}
+        onOpenMenu={() => setIsSheetOpen(true)}
+      />
 
-      <div className="sticky bottom-4 z-20">
-        <QuickAddBar
-          categoryOptions={listCategoryOptions}
-          onAdd={(input, categoryId) => addItemQuick(id, input, categoryId)}
-          historySource={itemHistory}
-          onToggleFavorite={toggleFavoriteHistory}
-        />
-      </div>
-
-      <div className="space-y-4">
+      <div className="mt-3 space-y-5">
         {Object.entries(grouped)
           .sort((a, b) => {
             const aIndex = orderMap.get(a[0]) ?? order.length + 1
@@ -500,12 +661,14 @@ export function ListDetailPage() {
           })
           .map(([categoryId, categoryItems]) => (
             <div key={categoryId} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold uppercase text-muted-foreground">
-                  {categoryMap.get(categoryId) ?? 'Other'}
-                </h2>
-                <span className="text-xs text-muted-foreground">{categoryItems.length} items</span>
-              </div>
+              {sortMode === 'category' && (
+                <div className="flex items-center justify-between px-1">
+                  <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    {categoryMap.get(categoryId) ?? 'Other'}
+                  </h2>
+                  <span className="text-xs text-muted-foreground">{categoryItems.length} items</span>
+                </div>
+              )}
               <div className="space-y-2">
                 {categoryItems.map((item) => (
                   <ItemRow
@@ -524,28 +687,36 @@ export function ListDetailPage() {
               </div>
             </div>
           ))}
+
+        {filteredItems.length === 0 && (
+          <div className="rounded-2xl border border-border/60 bg-card/70 p-6 text-center">
+            <p className="font-semibold">No items yet</p>
+            <p className="text-sm text-muted-foreground">Use the add bar below to capture ingredients fast.</p>
+          </div>
+        )}
       </div>
 
-      {filteredItems.length === 0 && (
-        <Card className="text-center text-muted-foreground">
-          <p>No items yet. Add something to start shopping.</p>
-        </Card>
-      )}
+      <OverflowSheet
+        open={isSheetOpen}
+        onOpenChange={setIsSheetOpen}
+        sortMode={list.sortMode}
+        movePurchased={movePurchased}
+        onChangeSort={(mode) => setSortMode(id, mode)}
+        onToggleMovePurchased={(value) => setMovePurchasedToBottom(id, value)}
+        onClearPurchased={handleClearPurchased}
+        canClearPurchased={purchasedCount > 0}
+        onDeleteList={handleDeleteList}
+        itemCount={listItems.length}
+        purchasedCount={purchasedCount}
+        updatedAt={list.updatedAt}
+      />
 
-      <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            if (window.confirm('Delete this list and its items?')) {
-              deleteList(id)
-              navigate('/')
-            }
-          }}
-        >
-          Delete list
-        </Button>
-      </div>
+      <AddBar
+        categoryOptions={listCategoryOptions}
+        onAdd={(input, categoryId) => addItemQuick(id, input, categoryId)}
+        historySource={itemHistory}
+        onToggleFavorite={toggleFavoriteHistory}
+      />
     </div>
   )
 }

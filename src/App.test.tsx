@@ -18,7 +18,27 @@ describe('App theme', () => {
 
   it('renders the Kowloon romance-inspired branding', () => {
     render(<App />)
-    expect(screen.getByText(/kowloon night market/i)).toBeInTheDocument()
-    expect(screen.getByText(/neon shopping companion/i)).toBeInTheDocument()
+    expect(screen.getByText(/grocery list/i)).toBeInTheDocument()
+    expect(screen.getByText(/generic romance/i)).toBeInTheDocument()
+  })
+
+  it('keeps the undo toast hidden on the streamlined surface', () => {
+    useAppStore.setState((state) => ({
+      ...state,
+      lastUndo: {
+        label: 'Created list',
+        snapshot: {
+          version: 1,
+          exportedAt: Date.now(),
+          lists: [],
+          items: [],
+          categories: state.categories,
+          itemHistory: [],
+          storeProfiles: [],
+        },
+      },
+    }))
+    render(<App />)
+    expect(screen.queryByText(/undo available/i)).not.toBeInTheDocument()
   })
 })
