@@ -357,7 +357,7 @@ function TopBar({
           <h1 className="text-xl font-semibold leading-tight">{name}</h1>
           <div className="flex items-center gap-1 text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
             <Sparkles className="size-3" aria-hidden />
-            <span>Kowloon Generic Romance glow</span>
+            <span>Night market glow</span>
           </div>
         </div>
         <div className="flex items-center gap-1">
