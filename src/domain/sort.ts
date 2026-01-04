@@ -42,6 +42,15 @@ export function sortItems(
       return a.name.localeCompare(b.name)
     }
 
+    if (options.sortMode === 'alpha') {
+      return a.name.localeCompare(b.name)
+    }
+
+    if (options.sortMode === 'recent') {
+      if (a.createdAt !== b.createdAt) return b.createdAt - a.createdAt
+      return a.name.localeCompare(b.name)
+    }
+
     const categoryA = resolveCategoryOrder(a.categoryId)
     const categoryB = resolveCategoryOrder(b.categoryId)
     if (categoryA !== categoryB) return categoryA - categoryB

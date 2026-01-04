@@ -1,8 +1,7 @@
 // ABOUTME: Hosts the top-level layout and routing for the grocery PWA.
 // ABOUTME: Boots state, renders navigation, and wires pages together.
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Link, Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom'
-import { Button } from './components/ui/button'
 import { useAppStore } from './state/appStore'
 import { ListDetailPage } from './pages/ListDetailPage'
 import { ListsPage } from './pages/ListsPage'
@@ -34,9 +33,9 @@ function AppShell() {
   const init = useAppStore((state) => state.init)
   const status = useAppStore((state) => state.status)
   const error = useAppStore((state) => state.error)
-  const lastUndo = useAppStore((state) => state.lastUndo)
-  const undo = useAppStore((state) => state.undo)
   const hasInitialized = useRef(false)
+  const location = useLocation()
+  const isListView = useMemo(() => location.pathname.startsWith('/list/'), [location.pathname])
 
   useEffect(() => {
     if (!hasInitialized.current) {
@@ -73,21 +72,19 @@ function AppShell() {
         />
       </div>
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 shadow-[0_10px_30px_rgba(0,0,0,0.45)] backdrop-blur">
-        <div className="relative mx-auto flex max-w-6xl items-start justify-between px-4 py-4">
-          <div className="relative flex items-start gap-3">
+        <div className="relative mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+          <div className="relative flex items-center gap-3">
             <div className="absolute -left-3 -top-3 h-12 w-12 rounded-full bg-primary/25 blur-2xl" aria-hidden />
             <Link to="/" className="relative flex flex-col leading-none no-underline">
-              <span className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">
-                Kowloon Night Market
+              <span className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">
+                grocery list
               </span>
-              <span className="text-sm font-medium text-muted-foreground">Neon shopping companion</span>
+              <span className="text-sm font-medium text-muted-foreground">
+                Kowloon Generic Romance errands
+              </span>
             </Link>
-            <div className="hidden items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.12em] text-primary shadow-[0_0_24px_rgba(233,118,255,0.25)] sm:flex">
-              <span className="size-2 rounded-full bg-accent shadow-[0_0_0_6px_rgba(45,212,191,0.18)]" aria-hidden />
-              <span>Night runner mode</span>
-            </div>
           </div>
-          <NavLinks />
+          {!isListView && <NavLinks />}
         </div>
         <div className="h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent opacity-70" aria-hidden />
         {error && (
@@ -96,29 +93,14 @@ function AppShell() {
           </div>
         )}
       </header>
-      <main className="relative mx-auto max-w-6xl px-4 pb-24 pt-10">
-        <div className="pointer-events-none absolute inset-x-8 top-2 h-24 rounded-full bg-primary/10 blur-3xl" aria-hidden />
-        <div className="relative rounded-2xl border border-border/60 bg-card/80 p-6 shadow-[0_30px_120px_rgba(0,0,0,0.45)] backdrop-blur-xl">
-          <Routes>
-            <Route path="/" element={<ListsPage />} />
-            <Route path="/list/:id" element={<ListDetailPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-          </Routes>
-        </div>
+      <main className="relative mx-auto max-w-5xl px-4 pb-24 pt-6">
+        <div className="pointer-events-none absolute inset-x-8 top-2 h-20 rounded-full bg-primary/10 blur-3xl" aria-hidden />
+        <Routes>
+          <Route path="/" element={<ListsPage />} />
+          <Route path="/list/:id" element={<ListDetailPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Routes>
       </main>
-      {lastUndo && (
-        <div className="fixed bottom-4 left-1/2 z-50 w-full max-w-xl -translate-x-1/2 rounded-lg border border-border bg-card/90 p-3 shadow-lg backdrop-blur">
-          <div className="flex items-center justify-between gap-3 text-sm">
-            <div>
-              <p className="font-medium">Undo available</p>
-              <p className="text-muted-foreground">{lastUndo.label}</p>
-            </div>
-            <Button variant="secondary" onClick={undo}>
-              Undo
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

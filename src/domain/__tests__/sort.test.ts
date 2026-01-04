@@ -68,4 +68,36 @@ describe('sortItems', () => {
 
     expect(sorted.map((item) => item.id)).toEqual(['2', '1', '3'])
   })
+
+  it('supports alphabetical ordering with purchased items at the end', () => {
+    const items: Item[] = [
+      baseItem({ id: '1', name: 'Banana' }),
+      baseItem({ id: '2', name: 'Apple' }),
+      baseItem({ id: '3', name: 'Carrot', isPurchased: true }),
+      baseItem({ id: '4', name: 'Dates' }),
+    ]
+
+    const sorted = sortItems(items, DEFAULT_CATEGORIES, {
+      ...defaultOptions,
+      sortMode: 'alpha',
+    })
+
+    expect(sorted.map((item) => item.id)).toEqual(['2', '1', '4', '3'])
+  })
+
+  it('orders by recent additions when requested', () => {
+    const items: Item[] = [
+      baseItem({ id: '1', name: 'Banana', createdAt: 1 }),
+      baseItem({ id: '2', name: 'Apple', createdAt: 3 }),
+      baseItem({ id: '3', name: 'Carrot', createdAt: 2, isPurchased: true, purchasedAt: 10 }),
+      baseItem({ id: '4', name: 'Dates', createdAt: 4 }),
+    ]
+
+    const sorted = sortItems(items, DEFAULT_CATEGORIES, {
+      ...defaultOptions,
+      sortMode: 'recent',
+    })
+
+    expect(sorted.map((item) => item.id)).toEqual(['4', '2', '1', '3'])
+  })
 })

@@ -1,6 +1,6 @@
 // ABOUTME: Declares domain-level TypeScript types for grocery lists and items.
 // ABOUTME: Provides shared interfaces used across the data, state, and UI layers.
-export type SortMode = 'category' | 'manual'
+export type SortMode = 'category' | 'manual' | 'alpha' | 'recent'
 
 export type QuantityUnit = 'lb' | 'lbs' | 'oz' | 'g' | 'kg' | 'ct' | 'pcs' | 'pc'
 
