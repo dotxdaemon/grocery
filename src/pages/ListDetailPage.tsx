@@ -26,6 +26,9 @@ import { useAppStore } from '../state/appStore'
 import { formatRelativeTime } from '../lib/time'
 import { cn } from '../lib/cn'
 
+const UNASSIGNED_CATEGORY_VALUE = 'category-unassigned'
+const AUTO_CATEGORY_VALUE = 'category-auto'
+
 const quantityLabel = (item: Item) => {
   if (item.quantity === undefined) return ''
   const value = Number.isInteger(item.quantity) ? item.quantity : item.quantity.toFixed(2)
@@ -45,7 +48,7 @@ function EditItemDialog({ item, categories, onSave }: EditItemProps) {
     quantity: item.quantity?.toString() ?? '',
     unit: item.unit ?? '',
     notes: item.notes ?? '',
-    categoryId: item.categoryId ?? '',
+    categoryId: item.categoryId ?? UNASSIGNED_CATEGORY_VALUE,
   })
 
   const resetForm = () =>
@@ -54,7 +57,7 @@ function EditItemDialog({ item, categories, onSave }: EditItemProps) {
       quantity: item.quantity?.toString() ?? '',
       unit: item.unit ?? '',
       notes: item.notes ?? '',
-      categoryId: item.categoryId ?? '',
+      categoryId: item.categoryId ?? UNASSIGNED_CATEGORY_VALUE,
     })
 
   return (
@@ -110,15 +113,15 @@ function EditItemDialog({ item, categories, onSave }: EditItemProps) {
               onValueChange={(value) => setForm((prev) => ({ ...prev, categoryId: value }))}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Pick a category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Unassigned</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
+              <SelectValue placeholder="Pick a category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={UNASSIGNED_CATEGORY_VALUE}>Unassigned</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
               </SelectContent>
             </Select>
           </div>
@@ -144,7 +147,7 @@ function EditItemDialog({ item, categories, onSave }: EditItemProps) {
                   quantity: form.quantity ? Number.parseFloat(form.quantity) : undefined,
                   unit: (form.unit || undefined) as QuantityUnit | undefined,
                   notes: form.notes,
-                  categoryId: form.categoryId || undefined,
+                  categoryId: form.categoryId === UNASSIGNED_CATEGORY_VALUE ? undefined : form.categoryId,
                 })
                 setOpen(false)
               }}
@@ -236,7 +239,7 @@ interface QuickAddProps {
 
 function QuickAddBar({ categoryOptions, onAdd, historySource, onToggleFavorite }: QuickAddProps) {
   const [input, setInput] = useState('')
-  const [categoryId, setCategoryId] = useState('')
+  const [categoryId, setCategoryId] = useState(AUTO_CATEGORY_VALUE)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const suggestions = useMemo(
     () => buildHistorySuggestions(input.trim(), historySource),
@@ -247,8 +250,9 @@ function QuickAddBar({ categoryOptions, onAdd, historySource, onToggleFavorite }
     event.preventDefault()
     if (!input.trim()) return
     setIsSubmitting(true)
-    await onAdd(input, categoryId || undefined)
+    await onAdd(input, categoryId === AUTO_CATEGORY_VALUE ? undefined : categoryId)
     setInput('')
+    setCategoryId(AUTO_CATEGORY_VALUE)
     setIsSubmitting(false)
   }
 
@@ -256,6 +260,8 @@ function QuickAddBar({ categoryOptions, onAdd, historySource, onToggleFavorite }
     setInput(name)
     if (suggestedCategory) {
       setCategoryId(suggestedCategory)
+    } else {
+      setCategoryId(AUTO_CATEGORY_VALUE)
     }
   }
 
@@ -276,7 +282,7 @@ function QuickAddBar({ categoryOptions, onAdd, historySource, onToggleFavorite }
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Auto</SelectItem>
+                <SelectItem value={AUTO_CATEGORY_VALUE}>Auto</SelectItem>
                 {categoryOptions.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
