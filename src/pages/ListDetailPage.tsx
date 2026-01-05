@@ -316,7 +316,7 @@ function AddBar({ categoryOptions, onAdd, historySource, onToggleFavorite }: Qui
             placeholder="Add items (e.g., 2 milk, apples 3)"
             aria-label="Quick add item"
             autoComplete="off"
-            className="flex-1 text-base md:text-sm"
+            className="flex-1"
           />
           <Button type="submit" disabled={!input.trim() || isSubmitting} className="h-11 px-5">
             Add
@@ -381,7 +381,7 @@ function TopBar({
             value={searchQuery}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Search items"
-            className="w-full text-base md:text-sm"
+            className="w-full"
           />
         </div>
       )}
