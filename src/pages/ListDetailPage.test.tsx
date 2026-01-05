@@ -11,9 +11,26 @@ import { useAppStore } from '../state/appStore'
 
 const listId = 'list-1'
 
-const renderListPage = (addItemQuick = vi.fn(async () => {})) => {
+const renderListPage = (
+  options: {
+    addItemQuick?: (listId: string, input: string, categoryId?: string) => Promise<void>
+    items?: {
+      id: string
+      listId: string
+      name: string
+      nameOriginal: string
+      isPurchased: boolean
+      createdAt: number
+      updatedAt: number
+      categoryId?: string
+    }[]
+    deleteItem?: (id: string) => Promise<void> | void
+  } = {},
+) => {
   resetAppStore()
   const now = Date.now()
+  const addItemQuick = options.addItemQuick ?? vi.fn(async () => {})
+  const deleteItem = options.deleteItem ?? vi.fn(async () => {})
   useAppStore.setState((state) => ({
     ...state,
     lists: [
@@ -26,7 +43,7 @@ const renderListPage = (addItemQuick = vi.fn(async () => {})) => {
         categoryOrder: DEFAULT_CATEGORY_ORDER,
       },
     ],
-    items: [],
+    items: options.items ?? [],
     categories: DEFAULT_CATEGORIES,
     preferences: {
       ...state.preferences,
@@ -41,7 +58,7 @@ const renderListPage = (addItemQuick = vi.fn(async () => {})) => {
     setMovePurchasedToBottom: async () => {},
     setSearchQuery: () => {},
     updateItem: async () => {},
-    deleteItem: async () => {},
+    deleteItem,
     deleteList: async () => {},
     reorderItems: async () => {},
     toggleFavoriteHistory: async () => {},
@@ -56,7 +73,7 @@ const renderListPage = (addItemQuick = vi.fn(async () => {})) => {
     </MemoryRouter>,
   )
 
-  return { addItemQuick }
+  return { addItemQuick, deleteItem }
 }
 
 describe('ListDetailPage quick entry', () => {
@@ -70,6 +87,12 @@ describe('ListDetailPage quick entry', () => {
     expect(screen.getByRole('button', { name: /add item entry/i })).toBeInTheDocument()
     expect(screen.queryByPlaceholderText(/add items/i)).not.toBeInTheDocument()
     expect(screen.queryByRole('textbox', { name: /new item entry/i })).not.toBeInTheDocument()
+  })
+
+  it('does not render a plus icon on the add entry control', () => {
+    renderListPage()
+
+    expect(document.querySelector('svg.lucide-plus')).toBeNull()
   })
 
   it('creates a text entry through the plus control and submits it', async () => {
@@ -87,5 +110,63 @@ describe('ListDetailPage quick entry', () => {
     await waitFor(() => {
       expect(screen.queryByRole('textbox', { name: /new item entry/i })).not.toBeInTheDocument()
     })
+  })
+})
+
+describe('ListDetailPage list utilities', () => {
+  beforeEach(() => {
+    resetAppStore()
+  })
+
+  it('shows the search bar above list items by default', () => {
+    const now = Date.now()
+    renderListPage({
+      items: [
+        {
+          id: 'item-1',
+          listId,
+          name: 'milk',
+          nameOriginal: 'Milk',
+          isPurchased: false,
+          createdAt: now,
+          updatedAt: now,
+        },
+      ],
+    })
+
+    const searchInput = screen.getByPlaceholderText(/search items/i)
+    const firstItem = screen.getByText('Milk')
+    expect(searchInput).toBeInTheDocument()
+    expect(searchInput.compareDocumentPosition(firstItem)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+  })
+
+  it('deletes an item immediately without asking for confirmation', async () => {
+    const user = userEvent.setup()
+    const now = Date.now()
+    const deleteItem = vi.fn(async () => {})
+    const confirmSpy = vi.spyOn(window, 'confirm')
+
+    renderListPage({
+      items: [
+        {
+          id: 'item-1',
+          listId,
+          name: 'milk',
+          nameOriginal: 'Milk',
+          isPurchased: false,
+          createdAt: now,
+          updatedAt: now,
+        },
+      ],
+      deleteItem,
+    })
+
+    await user.click(screen.getByRole('button', { name: /delete/i }))
+
+    await waitFor(() => {
+      expect(deleteItem).toHaveBeenCalledWith('item-1')
+    })
+    expect(confirmSpy).not.toHaveBeenCalled()
+    confirmSpy.mockRestore()
   })
 })
