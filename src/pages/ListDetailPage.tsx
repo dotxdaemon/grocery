@@ -357,7 +357,7 @@ function TopBar({
           <h1 className="text-xl font-semibold leading-tight">{name}</h1>
           <div className="flex items-center gap-1 text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
             <Sparkles className="size-3" aria-hidden />
-            <span>Night market glow</span>
+            <span>Everyday grocery glow</span>
           </div>
         </div>
         <div className="flex items-center gap-1">
@@ -381,7 +381,7 @@ function TopBar({
             value={searchQuery}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Search items"
-            className="w-full"
+            className="w-full text-base md:text-sm"
           />
         </div>
       )}

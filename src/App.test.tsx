@@ -19,7 +19,8 @@ describe('App theme', () => {
   it('renders the neon-inspired branding without the retired reference', () => {
     render(<App />)
     expect(screen.getByText(/grocery list/i)).toBeInTheDocument()
-    expect(screen.getByText(/night market errands/i)).toBeInTheDocument()
+    expect(screen.getByText(/everyday grocery glow/i)).toBeInTheDocument()
+    expect(screen.queryByText(/night market errands/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/generic romance/i)).not.toBeInTheDocument()
   })
 
