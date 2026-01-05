@@ -79,9 +79,7 @@ function AppShell() {
               <span className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">
                 grocery list
               </span>
-              <span className="text-sm font-medium text-muted-foreground">
-                Night market errands
-              </span>
+              <span className="text-sm font-medium text-muted-foreground">Everyday grocery glow</span>
             </Link>
           </div>
           {!isListView && <NavLinks />}

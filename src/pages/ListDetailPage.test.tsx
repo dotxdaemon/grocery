@@ -99,6 +99,38 @@ describe('ListDetailPage', () => {
     expect(screen.getByText(/delete list/i)).toBeInTheDocument()
   })
 
+  it('keeps the search input sized to prevent zoom when opened', async () => {
+    const now = Date.now()
+    useAppStore.setState((state) => ({
+      status: 'ready',
+      lists: [
+        {
+          id: 'list-1',
+          name: 'Cooking',
+          createdAt: now,
+          updatedAt: now,
+          sortMode: 'category',
+          categoryOrder: DEFAULT_CATEGORY_ORDER,
+        },
+      ],
+      items: [],
+      categories: state.categories,
+      preferences: { ...state.preferences, activeListId: 'list-1' },
+      itemHistory: [],
+    }))
+
+    render(
+      <MemoryRouter initialEntries={['/list/list-1']}>
+        <Routes>
+          <Route path="/list/:id" element={<ListDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: /search list/i }))
+    expect(screen.getByPlaceholderText(/search items/i)).toHaveClass('text-base')
+  })
+
   it('keeps the quick add input large enough to avoid viewport jumps while adding', async () => {
     const now = Date.now()
     useAppStore.setState((state) => ({
