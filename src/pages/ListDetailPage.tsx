@@ -2,7 +2,7 @@
 // ABOUTME: Supports search, sorting, manual reordering, editing, and history suggestions.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ChevronDown, ChevronUp, MoreHorizontal, Plus, Search, Sparkles, Tag, X } from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronUp, MoreHorizontal, Sparkles, Tag, X } from 'lucide-react'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Card } from '../components/ui/card'
@@ -218,13 +218,7 @@ function ItemRow({
         )}
         <div className="flex gap-1">
           <EditItemDialog item={item} categories={categoryOptions} onSave={onEdit} />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              if (window.confirm('Delete this item?')) onDelete()
-            }}
-          >
+          <Button variant="ghost" size="sm" onClick={onDelete}>
             Delete
           </Button>
         </div>
@@ -322,8 +316,7 @@ function AddBar({ categoryOptions, onAdd, historySource, onToggleFavorite }: Qui
           </Select>
           {!isAdding && (
             <Button type="button" variant="primary" className="h-11 px-5" onClick={() => setIsAdding(true)}>
-              <Plus className="size-4" aria-hidden />
-              <span className="sr-only">Add item entry</span>
+              Add item entry
             </Button>
           )}
         </div>
@@ -363,20 +356,16 @@ function AddBar({ categoryOptions, onAdd, historySource, onToggleFavorite }: Qui
 interface TopBarProps {
   name: string
   onBack: () => void
-  isSearchOpen: boolean
   searchQuery: string
   onSearchChange: (value: string) => void
-  onToggleSearch: () => void
   onOpenMenu: () => void
 }
 
 function TopBar({
   name,
   onBack,
-  isSearchOpen,
   searchQuery,
   onSearchChange,
-  onToggleSearch,
   onOpenMenu,
 }: TopBarProps) {
   return (
@@ -394,30 +383,19 @@ function TopBar({
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            aria-label="Search list"
-            aria-pressed={isSearchOpen}
-            onClick={onToggleSearch}
-          >
-            <Search className="size-4" aria-hidden />
-          </Button>
           <Button variant="ghost" size="sm" aria-label="Open list menu" onClick={onOpenMenu}>
             <MoreHorizontal className="size-4" aria-hidden />
           </Button>
         </div>
       </div>
-      {isSearchOpen && (
-        <div className="mt-3">
-          <Input
-            value={searchQuery}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search items"
-            className="w-full"
-          />
-        </div>
-      )}
+      <div className="mt-3">
+        <Input
+          value={searchQuery}
+          onChange={(event) => onSearchChange(event.target.value)}
+          placeholder="Search items"
+          className="w-full"
+        />
+      </div>
     </div>
   )
 }
@@ -557,7 +535,6 @@ export function ListDetailPage() {
   const setActiveList = useAppStore((state) => state.setActiveList)
 
   const list = useMemo(() => lists.find((entry) => entry.id === safeId), [lists, safeId])
-  const [isSearchOpen, setIsSearchOpen] = useState(Boolean(list ? preferences.searchQueryByList[list.id] : false))
   const [isSheetOpen, setIsSheetOpen] = useState(false)
 
   useEffect(() => {
@@ -568,12 +545,6 @@ export function ListDetailPage() {
   const categoryOrder = list?.categoryOrder ?? DEFAULT_CATEGORY_ORDER
   const movePurchased = preferences.movePurchasedToBottom[safeId] ?? true
   const searchQuery = preferences.searchQueryByList[safeId] ?? ''
-
-  useEffect(() => {
-    if (searchQuery && !isSearchOpen) {
-      setIsSearchOpen(true)
-    }
-  }, [isSearchOpen, searchQuery])
 
   const categoryMap = useMemo(
     () => new Map(categories.map((category) => [category.id, category.name])),
@@ -653,15 +624,6 @@ export function ListDetailPage() {
     )
   }
 
-  const toggleSearch = () => {
-    if (isSearchOpen) {
-      setIsSearchOpen(false)
-      setSearchQuery(id, '')
-    } else {
-      setIsSearchOpen(true)
-    }
-  }
-
   const handleClearPurchased = () => {
     if (window.confirm('Clear purchased items?')) clearPurchased(id)
   }
@@ -678,10 +640,8 @@ export function ListDetailPage() {
       <TopBar
         name={list.name}
         onBack={() => navigate('/')}
-        isSearchOpen={isSearchOpen}
         searchQuery={searchQuery}
         onSearchChange={(value) => setSearchQuery(id, value)}
-        onToggleSearch={toggleSearch}
         onOpenMenu={() => setIsSheetOpen(true)}
       />
 
