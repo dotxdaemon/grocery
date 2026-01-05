@@ -316,7 +316,7 @@ function AddBar({ categoryOptions, onAdd, historySource, onToggleFavorite }: Qui
             placeholder="Add items (e.g., 2 milk, apples 3)"
             aria-label="Quick add item"
             autoComplete="off"
-            className="flex-1"
+            className="flex-1 text-base md:text-sm"
           />
           <Button type="submit" disabled={!input.trim() || isSubmitting} className="h-11 px-5">
             Add

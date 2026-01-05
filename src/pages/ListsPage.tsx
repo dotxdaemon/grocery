@@ -104,7 +104,15 @@ export function ListsPage() {
                       </Button>
                     </div>
                   ) : (
-                    <h2 className="text-lg font-semibold">{list.name}</h2>
+                    <h2 className="text-lg font-semibold">
+                      <Link
+                        to={`/list/${list.id}`}
+                        className="text-foreground no-underline transition hover:text-primary focus-visible:underline"
+                        onClick={() => setActiveList(list.id)}
+                      >
+                        {list.name}
+                      </Link>
+                    </h2>
                   )}
                   <p className="text-xs text-muted-foreground">
                     Updated {formatRelativeTime(list.updatedAt)} • {count.total} items ({count.purchased} purchased)
