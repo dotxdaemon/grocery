@@ -1,8 +1,8 @@
 // ABOUTME: Displays a single grocery list with items, quick add, and bulk actions.
 // ABOUTME: Supports search, sorting, manual reordering, editing, and history suggestions.
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ChevronDown, ChevronUp, MoreHorizontal, Search, Sparkles, Tag } from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronUp, MoreHorizontal, Plus, Search, Sparkles, Tag, X } from 'lucide-react'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Card } from '../components/ui/card'
@@ -244,8 +244,10 @@ function AddBar({ categoryOptions, onAdd, historySource, onToggleFavorite }: Qui
   const [input, setInput] = useState('')
   const [categoryId, setCategoryId] = useState(AUTO_CATEGORY_VALUE)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isAdding, setIsAdding] = useState(false)
+  const inputRef = useRef<HTMLInputElement | null>(null)
   const suggestions = useMemo(
-    () => buildHistorySuggestions(input.trim(), historySource),
+    () => buildHistorySuggestions(input.trim(), historySource, 4),
     [historySource, input],
   )
 
@@ -256,11 +258,19 @@ function AddBar({ categoryOptions, onAdd, historySource, onToggleFavorite }: Qui
     await onAdd(input, categoryId === AUTO_CATEGORY_VALUE ? undefined : categoryId)
     setInput('')
     setCategoryId(AUTO_CATEGORY_VALUE)
+    setIsAdding(false)
     setIsSubmitting(false)
   }
 
+  useEffect(() => {
+    if (isAdding) {
+      inputRef.current?.focus()
+    }
+  }, [isAdding])
+
   const applySuggestion = (name: string, suggestedCategory?: string) => {
     setInput(name)
+    setIsAdding(true)
     if (suggestedCategory) {
       setCategoryId(suggestedCategory)
     } else {
@@ -295,7 +305,7 @@ function AddBar({ categoryOptions, onAdd, historySource, onToggleFavorite }: Qui
             ))}
           </div>
         )}
-        <form onSubmit={handleSubmit} className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <Select value={categoryId} onValueChange={setCategoryId}>
             <SelectTrigger className="w-12 justify-center rounded-full border-border" aria-label="Choose category">
               <Tag className="size-4" aria-hidden />
@@ -310,18 +320,41 @@ function AddBar({ categoryOptions, onAdd, historySource, onToggleFavorite }: Qui
               ))}
             </SelectContent>
           </Select>
-          <Input
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            placeholder="Add items (e.g., 2 milk, apples 3)"
-            aria-label="Quick add item"
-            autoComplete="off"
-            className="flex-1"
-          />
-          <Button type="submit" disabled={!input.trim() || isSubmitting} className="h-11 px-5">
-            Add
-          </Button>
-        </form>
+          {!isAdding && (
+            <Button type="button" variant="primary" className="h-11 px-5" onClick={() => setIsAdding(true)}>
+              <Plus className="size-4" aria-hidden />
+              <span className="sr-only">Add item entry</span>
+            </Button>
+          )}
+        </div>
+        {isAdding && (
+          <form onSubmit={handleSubmit} className="flex items-center gap-2">
+            <Input
+              ref={inputRef}
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              placeholder="Add items (e.g., 2 milk, apples 3)"
+              aria-label="New item entry"
+              autoComplete="off"
+              className="flex-1"
+            />
+            <Button type="submit" disabled={!input.trim() || isSubmitting} className="h-11 px-5">
+              Save item
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-11 px-3"
+              onClick={() => {
+                setInput('')
+                setIsAdding(false)
+              }}
+              aria-label="Cancel add item"
+            >
+              <X className="size-4" aria-hidden />
+            </Button>
+          </form>
+        )}
       </div>
     </div>
   )
