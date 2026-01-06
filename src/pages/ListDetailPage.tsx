@@ -2,7 +2,7 @@
 // ABOUTME: Supports sorting, manual reordering, editing, and list management.
 import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ChevronDown, ChevronUp, MoreHorizontal, Sparkles } from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronUp, MoreHorizontal } from 'lucide-react'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Card } from '../components/ui/card'
@@ -332,10 +332,6 @@ function TopBar({
         </Button>
         <div className="flex flex-1 flex-col items-center gap-1 text-center">
           <h1 className="text-xl font-semibold leading-tight">{name}</h1>
-          <div className="flex items-center gap-1 text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
-            <Sparkles className="size-3" aria-hidden />
-            <span>Everyday grocery glow</span>
-          </div>
         </div>
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="sm" aria-label="Open list menu" onClick={onOpenMenu}>
