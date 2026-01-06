@@ -24,56 +24,80 @@ export function validateImportedData(payload: unknown): ImportResult {
     return value
   }
 
-  const lists = ensureArray(incoming.lists, 'lists').filter(
-    (list: any): list is ExportPayload['lists'][number] =>
-      typeof list?.id === 'string' &&
-      list.id.trim() !== '' &&
-      typeof list.name === 'string' &&
-      typeof list.createdAt === 'number' &&
-      typeof list.updatedAt === 'number' &&
-      (list.sortMode === 'category' || list.sortMode === 'manual') &&
-      Array.isArray(list.categoryOrder),
-  )
+  const toRecord = (value: unknown): Record<string, unknown> | null =>
+    typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : null
+
+  const lists = ensureArray(incoming.lists, 'lists').filter((list): list is ExportPayload['lists'][number] => {
+    const candidate = toRecord(list)
+    return (
+      candidate !== null &&
+      typeof candidate.id === 'string' &&
+      candidate.id.trim() !== '' &&
+      typeof candidate.name === 'string' &&
+      typeof candidate.createdAt === 'number' &&
+      typeof candidate.updatedAt === 'number' &&
+      (candidate.sortMode === 'category' || candidate.sortMode === 'manual') &&
+      Array.isArray(candidate.categoryOrder)
+    )
+  })
 
   const listIds = new Set(lists.map((list) => list.id))
 
-  const items = ensureArray(incoming.items, 'items').filter(
-    (item: any): item is ExportPayload['items'][number] =>
-      typeof item?.id === 'string' &&
-      item.id.trim() !== '' &&
-      typeof item.listId === 'string' &&
-      listIds.has(item.listId) &&
-      typeof item.name === 'string' &&
-      typeof item.nameOriginal === 'string' &&
-      typeof item.isPurchased === 'boolean' &&
-      typeof item.createdAt === 'number' &&
-      typeof item.updatedAt === 'number',
-  )
+  const items = ensureArray(incoming.items, 'items').filter((item): item is ExportPayload['items'][number] => {
+    const candidate = toRecord(item)
+    return (
+      candidate !== null &&
+      typeof candidate.id === 'string' &&
+      candidate.id.trim() !== '' &&
+      typeof candidate.listId === 'string' &&
+      listIds.has(candidate.listId) &&
+      typeof candidate.name === 'string' &&
+      typeof candidate.nameOriginal === 'string' &&
+      typeof candidate.isPurchased === 'boolean' &&
+      typeof candidate.createdAt === 'number' &&
+      typeof candidate.updatedAt === 'number'
+    )
+  })
 
   const categoriesSource = ensureArray(incoming.categories, 'categories')
   const categories = categoriesSource.filter(
-    (category: any): category is ExportPayload['categories'][number] =>
-      typeof category?.id === 'string' &&
-      typeof category.name === 'string' &&
-      typeof category.defaultOrder === 'number',
+    (category: unknown): category is ExportPayload['categories'][number] => {
+      const candidate = toRecord(category)
+      return (
+        candidate !== null &&
+        typeof candidate.id === 'string' &&
+        typeof candidate.name === 'string' &&
+        typeof candidate.defaultOrder === 'number'
+      )
+    },
   )
 
   const itemHistorySource = ensureArray(incoming.itemHistory, 'itemHistory')
   const itemHistory = itemHistorySource.filter(
-    (entry: any): entry is ExportPayload['itemHistory'][number] =>
-      typeof entry?.id === 'string' &&
-      typeof entry.nameCanonical === 'string' &&
-      typeof entry.lastUsedAt === 'number' &&
-      typeof entry.timesUsed === 'number' &&
-      typeof entry.isFavorite === 'boolean',
+    (entry: unknown): entry is ExportPayload['itemHistory'][number] => {
+      const candidate = toRecord(entry)
+      return (
+        candidate !== null &&
+        typeof candidate.id === 'string' &&
+        typeof candidate.nameCanonical === 'string' &&
+        typeof candidate.lastUsedAt === 'number' &&
+        typeof candidate.timesUsed === 'number' &&
+        typeof candidate.isFavorite === 'boolean'
+      )
+    },
   )
 
   const storeProfilesSource = ensureArray(incoming.storeProfiles, 'storeProfiles')
   const storeProfiles = storeProfilesSource.filter(
-    (store: any): store is ExportPayload['storeProfiles'][number] =>
-      typeof store?.id === 'string' &&
-      typeof store.name === 'string' &&
-      Array.isArray(store.aisleOrder),
+    (store: unknown): store is ExportPayload['storeProfiles'][number] => {
+      const candidate = toRecord(store)
+      return (
+        candidate !== null &&
+        typeof candidate.id === 'string' &&
+        typeof candidate.name === 'string' &&
+        Array.isArray(candidate.aisleOrder)
+      )
+    },
   )
 
   if (incoming.lists && lists.length !== incoming.lists.length) {

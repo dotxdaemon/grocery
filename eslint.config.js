@@ -39,7 +39,8 @@ export default defineConfig([
     },
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.app.json', './tsconfig.node.json'],
+        project: ['./tsconfig.eslint.json', './tsconfig.node.json'],
+        tsconfigRootDir: import.meta.dirname,
       },
       ecmaVersion: 2020,
       globals: {

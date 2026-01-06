@@ -6,6 +6,7 @@ import { useAppStore } from './state/appStore'
 import { ListDetailPage } from './pages/ListDetailPage'
 import { ListsPage } from './pages/ListsPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { UndoToast } from './components/UndoToast'
 
 function NavLinks() {
   const location = useLocation()
@@ -42,7 +43,7 @@ function AppShell() {
       hasInitialized.current = true
       init()
     }
-  }, [])
+  }, [init])
 
   if (status === 'idle') {
     return (
@@ -67,14 +68,15 @@ function AppShell() {
           aria-hidden
         />
         <div
-          className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:140px_140px] opacity-60"
+          className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] opacity-60"
+          style={{ backgroundSize: '140px 140px' }}
           aria-hidden
         />
       </div>
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 shadow-[0_10px_30px_rgba(0,0,0,0.45)] backdrop-blur">
-        <div className="relative mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+        <div className="relative mx-auto flex max-w-6xl items-center justify-between p-4">
           <div className="relative flex items-center gap-3">
-            <div className="absolute -left-3 -top-3 h-12 w-12 rounded-full bg-primary/25 blur-2xl" aria-hidden />
+            <div className="absolute -left-3 -top-3 size-12 rounded-full bg-primary/25 blur-2xl" aria-hidden />
             <Link to="/" className="relative flex flex-col leading-none no-underline">
               <span className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">
                 grocery list
@@ -99,6 +101,7 @@ function AppShell() {
           <Route path="/settings" element={<SettingsPage />} />
         </Routes>
       </main>
+      <UndoToast />
     </div>
   )
 }

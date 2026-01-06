@@ -10,11 +10,10 @@ export interface ParsedQuickAdd {
 }
 
 export function parseQuickAddInput(input: string): ParsedQuickAdd {
-  const nameOriginal = input
   const normalized = input.trim()
 
   if (!normalized) {
-    return { nameCanonical: '', nameOriginal }
+    return { nameCanonical: '', nameOriginal: '' }
   }
 
   const normalizeUnit = (raw?: string): QuantityUnit | undefined => {
@@ -58,11 +57,15 @@ export function parseQuickAddInput(input: string): ParsedQuickAdd {
     }
   }
 
-  const canonical = namePortion.replace(/\s+/g, ' ').trim().toLowerCase()
+  const cleanedName = namePortion.replace(/\s+/g, ' ').trim()
+  if (!cleanedName) {
+    return { nameCanonical: '', nameOriginal: '' }
+  }
+  const canonical = cleanedName.toLowerCase()
 
   return {
     nameCanonical: canonical || normalized.toLowerCase(),
-    nameOriginal,
+    nameOriginal: cleanedName,
     quantity,
     unit,
   }
