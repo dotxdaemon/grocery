@@ -7,6 +7,7 @@ import { ListDetailPage } from './pages/ListDetailPage'
 import { ListsPage } from './pages/ListsPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { UndoToast } from './components/UndoToast'
+import { cn } from './lib/cn'
 
 function NavLinks() {
   const location = useLocation()
@@ -20,9 +21,18 @@ function NavLinks() {
         <Link
           key={link.to}
           to={link.to}
-          className={`relative overflow-hidden rounded-full border border-border/60 px-4 py-2 transition hover:border-primary/40 hover:text-primary ${location.pathname === link.to ? 'bg-primary/15 text-primary shadow-[0_0_24px_rgba(233,118,255,0.2)]' : 'text-muted-foreground'}`}
+          className={cn(
+            'relative overflow-hidden rounded-full border border-border/60 px-4 py-2 transition',
+            'hover:border-[rgba(var(--primary-rgb),0.4)] hover:text-[hsl(var(--color-primary))]',
+            location.pathname === link.to
+              ? 'bg-[rgba(var(--primary-rgb),0.15)] text-[hsl(var(--color-accent))] shadow-[0_0_24px_rgba(var(--primary-rgb),0.2)]'
+              : 'text-muted-foreground',
+          )}
         >
-          <span className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent opacity-60" aria-hidden />
+          <span
+            className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[hsl(var(--color-primary))] to-transparent opacity-60"
+            aria-hidden
+          />
           <span className="relative">{link.label}</span>
         </Link>
       ))}
@@ -60,7 +70,7 @@ function AppShell() {
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div
-          className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(233,118,255,0.18),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(56,189,248,0.18),transparent_30%),radial-gradient(circle_at_75%_75%,rgba(34,211,238,0.18),transparent_35%)] blur-3xl"
+          className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(var(--primary-rgb),0.16),transparent_36%),radial-gradient(circle_at_80%_0%,rgba(var(--accent-rgb),0.12),transparent_32%),radial-gradient(circle_at_75%_75%,rgba(var(--primary-hover-rgb),0.14),transparent_38%)] blur-3xl"
           aria-hidden
         />
         <div
@@ -68,7 +78,7 @@ function AppShell() {
           aria-hidden
         />
         <div
-          className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] opacity-60"
+          className="absolute inset-0 bg-[linear-gradient(rgba(var(--divider-rgb),0.45)_1px,transparent_1px),linear-gradient(90deg,rgba(var(--divider-rgb),0.45)_1px,transparent_1px)] opacity-80"
           style={{ backgroundSize: '140px 140px' }}
           aria-hidden
         />
@@ -78,14 +88,14 @@ function AppShell() {
           <div className="relative flex items-center gap-3">
             <div className="absolute -left-3 -top-3 size-12 rounded-full bg-primary/25 blur-2xl" aria-hidden />
             <Link to="/" className="relative flex flex-col leading-none no-underline">
-              <span className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">
+              <span className="text-xs font-semibold uppercase tracking-[0.28em] text-[hsl(var(--color-accent))]">
                 grocery list
               </span>
             </Link>
           </div>
           {!isListView && <NavLinks />}
         </div>
-        <div className="h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent opacity-70" aria-hidden />
+        <div className="h-px bg-gradient-to-r from-transparent via-[hsl(var(--color-primary))] to-transparent opacity-70" aria-hidden />
         {error && (
           <div className="bg-amber-900/90 px-4 py-2 text-sm text-amber-100 backdrop-blur">
             {error}
@@ -106,6 +116,13 @@ function AppShell() {
 }
 
 export default function App() {
+  useEffect(() => {
+    document.body.classList.add('theme-berry-mint-mint-primary')
+    return () => {
+      document.body.classList.remove('theme-berry-mint-mint-primary')
+    }
+  }, [])
+
   return (
     <Router basename="/grocery">
       <AppShell />

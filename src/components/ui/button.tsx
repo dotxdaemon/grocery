@@ -12,16 +12,15 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   size?: 'sm' | 'md' | 'lg'
 }
 
+const focusClasses =
+  'focus-visible:ring-2 focus-visible:ring-[hsl(var(--color-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--color-background))]'
+
 const variantClasses: Record<ButtonVariant, string> = {
-  primary:
-    'bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-  secondary:
-    'bg-secondary text-secondary-foreground hover:bg-secondary/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-  outline:
-    'border border-input hover:bg-secondary text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-  ghost: 'hover:bg-secondary text-foreground',
-  destructive:
-    'bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+  primary: `bg-[var(--primary)] text-[var(--on-primary)] hover:bg-[var(--primary-hover)] ${focusClasses}`,
+  secondary: `border border-[var(--divider)] bg-[var(--surface2)] text-[var(--text)] hover:bg-[var(--surface)] ${focusClasses}`,
+  outline: `border border-[var(--divider)] bg-transparent text-[var(--text)] hover:bg-[var(--surface2)] ${focusClasses}`,
+  ghost: `text-[var(--text)] hover:bg-[var(--surface2)] ${focusClasses}`,
+  destructive: `bg-[hsl(var(--color-destructive))] text-[hsl(var(--color-destructive-foreground))] hover:bg-[hsl(var(--color-destructive))] hover:brightness-95 ${focusClasses}`,
 }
 
 const sizeClasses = {

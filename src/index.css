@@ -5,49 +5,54 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: 231 39% 6%;
-  --foreground: 210 40% 98%;
-  --card: 229 36% 10%;
-  --card-foreground: 210 40% 98%;
-  --popover: 232 32% 11%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 316 83% 64%;
-  --primary-foreground: 232 54% 12%;
-  --secondary: 192 95% 68%;
-  --secondary-foreground: 230 76% 10%;
-  --muted: 231 22% 22%;
-  --muted-foreground: 220 15% 70%;
-  --accent: 166 75% 60%;
-  --accent-foreground: 229 70% 10%;
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 231 24% 28%;
-  --input: 231 24% 28%;
-  --ring: 316 83% 64%;
-  --radius: 0.75rem;
-}
+:root,
+.theme-berry-mint-mint-primary {
+  --bg: #F7FBF9;
+  --surface: #FFFFFF;
+  --surface2: #EEF7F2;
+  --text: #111827;
+  --muted: #5F6B66;
+  --divider: #DDE7E1;
+  --primary: #34D399;
+  --primary-hover: #10B981;
+  --on-primary: #053321;
+  --chip: #E6FAF1;
+  --accent: #E11D48;
+  --on-accent: #FFFFFF;
+  --danger: #EF4444;
+  --success: #10B981;
+  --warning: #F59E0B;
 
-.light {
-  --background: 214 33% 96%;
-  --foreground: 233 31% 14%;
-  --card: 0 0% 100%;
-  --card-foreground: 233 31% 14%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 233 31% 14%;
-  --primary: 316 83% 54%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 196 86% 72%;
-  --secondary-foreground: 233 31% 14%;
-  --muted: 216 28% 90%;
-  --muted-foreground: 233 15% 36%;
-  --accent: 164 67% 52%;
-  --accent-foreground: 233 31% 14%;
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 216 28% 82%;
-  --input: 216 28% 82%;
-  --ring: 316 83% 54%;
+  --bg-rgb: 247 251 249;
+  --surface-rgb: 255 255 255;
+  --surface2-rgb: 238 247 242;
+  --text-rgb: 17 24 39;
+  --divider-rgb: 221 231 225;
+  --primary-rgb: 52 211 153;
+  --primary-hover-rgb: 16 185 129;
+  --accent-rgb: 225 29 72;
+
+  --color-background: 150 33% 98%;
+  --color-foreground: 221 39% 11%;
+  --color-card: 0 0% 100%;
+  --color-card-foreground: 221 39% 11%;
+  --color-popover: 0 0% 100%;
+  --color-popover-foreground: 221 39% 11%;
+  --color-primary: 158 64% 52%;
+  --color-primary-hover: 160 84% 39%;
+  --color-primary-foreground: 157 82% 11%;
+  --color-secondary: 153 67% 94%;
+  --color-secondary-foreground: 221 39% 11%;
+  --color-muted: 147 36% 95%;
+  --color-muted-foreground: 155 6% 40%;
+  --color-accent: 347 77% 50%;
+  --color-accent-foreground: 0 0% 100%;
+  --color-destructive: 0 84% 60%;
+  --color-destructive-foreground: 0 0% 100%;
+  --color-border: 144 17% 89%;
+  --color-input: 144 17% 89%;
+  --color-ring: 158 64% 52%;
+  --radius: 0.75rem;
 }
 
 * {
@@ -58,13 +63,13 @@ body {
   @apply bg-background text-foreground antialiased;
   font-family: 'Space Grotesk', 'Noto Sans JP', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   min-height: 100vh;
-  background-image: radial-gradient(circle at 20% 20%, rgba(233, 118, 255, 0.12), transparent 32%),
-    radial-gradient(circle at 80% 0%, rgba(56, 189, 248, 0.12), transparent 28%),
-    radial-gradient(circle at 70% 70%, rgba(34, 211, 238, 0.12), transparent 32%),
-    linear-gradient(120deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 140px 140px, 140px 140px;
+  background-image: radial-gradient(circle at 20% 18%, rgba(var(--primary-rgb), 0.16), transparent 34%),
+    radial-gradient(circle at 80% 0%, rgba(var(--accent-rgb), 0.1), transparent 32%),
+    radial-gradient(circle at 70% 74%, rgba(var(--primary-hover-rgb), 0.12), transparent 38%),
+    linear-gradient(120deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0)),
+    linear-gradient(rgba(var(--divider-rgb), 0.5) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--divider-rgb), 0.5) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 120px 120px, 120px 120px;
   background-attachment: fixed;
 }
 
@@ -75,14 +80,21 @@ select {
 }
 
 a {
-  @apply text-primary hover:underline;
+  color: hsl(var(--color-accent));
+  text-decoration: none;
+}
+
+a:hover {
+  color: hsl(var(--color-accent));
+  text-decoration: underline;
 }
 
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
+a:focus-visible,
 select:focus-visible {
-  outline: 2px solid hsl(var(--ring));
+  outline: 2px solid hsl(var(--color-ring) / 0.5);
   outline-offset: 2px;
 }
 

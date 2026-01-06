@@ -588,7 +588,7 @@ export function ListDetailPage() {
     return (
       <Card className="space-y-3">
         <p className="text-lg font-semibold">List not found</p>
-        <Link to="/" className="text-primary hover:underline">
+        <Link to="/" className="text-[hsl(var(--color-accent))] hover:underline">
           Back to lists
         </Link>
       </Card>
@@ -636,7 +636,9 @@ export function ListDetailPage() {
               <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 {categoryMap.get(categoryId) ?? 'Other'}
               </h2>
-              <span className="text-xs text-muted-foreground">{categoryItems.length} items</span>
+              <span className="text-xs font-semibold text-[hsl(var(--color-accent))]">
+                {categoryItems.length} items
+              </span>
             </div>
           )}
           <div className="space-y-2">
