@@ -58,4 +58,26 @@ describe('app store', () => {
     await store.undo()
     expect(useAppStore.getState().items).toHaveLength(1)
   })
+
+  it('adds multiple items from a delimited quick-add string with a single undo baseline', async () => {
+    const store = useAppStore.getState()
+    await store.createList('Batch')
+    const listId = useAppStore.getState().lists[0].id
+
+    await store.addItemQuick(listId, 'apples, bananas; carrots\nmilk')
+
+    const items = useAppStore.getState().items
+    expect(items).toHaveLength(4)
+    expect(useAppStore.getState().lastUndo?.label).toBe('Added item')
+    expect(useAppStore.getState().lastUndo?.snapshot.items).toHaveLength(0)
+  })
+
+  it('clears undo metadata when requested', async () => {
+    const store = useAppStore.getState()
+    await store.createList('Clearable')
+
+    expect(useAppStore.getState().lastUndo).toBeDefined()
+    await store.clearUndo()
+    expect(useAppStore.getState().lastUndo).toBeUndefined()
+  })
 })

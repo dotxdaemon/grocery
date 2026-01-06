@@ -1,6 +1,6 @@
 // ABOUTME: Displays a single grocery list with items, quick add, and bulk actions.
 // ABOUTME: Supports sorting, manual reordering, editing, and history suggestions.
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ChevronDown, ChevronUp, MoreHorizontal, Sparkles } from 'lucide-react'
 import { Badge } from '../components/ui/badge'
@@ -15,11 +15,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../components/ui/dropdown-menu'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
 import { Textarea } from '../components/ui/textarea'
 import { DEFAULT_CATEGORY_ORDER } from '../domain/categories'
+import { buildHistorySuggestions } from '../domain/history'
 import { sortItems } from '../domain/sort'
 import type { Item, QuantityUnit, SortMode } from '../domain/types'
 import { useAppStore } from '../state/appStore'
@@ -40,9 +47,10 @@ interface EditItemProps {
   item: Item
   categories: { id: string; name: string }[]
   onSave: (updates: Partial<Item>) => void
+  trigger?: ReactNode
 }
 
-function EditItemDialog({ item, categories, onSave }: EditItemProps) {
+function EditItemDialog({ item, categories, onSave, trigger }: EditItemProps) {
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({
     name: item.nameOriginal,
@@ -70,9 +78,11 @@ function EditItemDialog({ item, categories, onSave }: EditItemProps) {
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm">
-          Edit
-        </Button>
+        {trigger ?? (
+          <Button variant="ghost" size="sm">
+            Edit
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -114,15 +124,15 @@ function EditItemDialog({ item, categories, onSave }: EditItemProps) {
               onValueChange={(value) => setForm((prev) => ({ ...prev, categoryId: value }))}
             >
               <SelectTrigger>
-              <SelectValue placeholder="Pick a category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={UNASSIGNED_CATEGORY_VALUE}>Unassigned</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category.id} value={category.id}>
-                  {category.name}
-                </SelectItem>
-              ))}
+                <SelectValue placeholder="Pick a category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={UNASSIGNED_CATEGORY_VALUE}>Unassigned</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -172,6 +182,7 @@ interface ItemRowProps {
   onMoveDown?: () => void
   manualMode: boolean
   categoryOptions: { id: string; name: string }[]
+  showCategoryBadge: boolean
 }
 
 function ItemRow({
@@ -184,18 +195,37 @@ function ItemRow({
   onMoveDown,
   manualMode,
   categoryOptions,
+  showCategoryBadge,
 }: ItemRowProps) {
   return (
-    <div className="group flex items-start justify-between gap-3 rounded-2xl bg-card/70 px-3 py-3 ring-1 ring-border/60">
+    <div
+      role="button"
+      tabIndex={0}
+      aria-pressed={item.isPurchased}
+      onClick={onToggle}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onToggle()
+        }
+      }}
+      className="group flex items-start justify-between gap-3 rounded-2xl bg-card/70 p-3 ring-1 ring-border/60 transition hover:ring-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    >
       <div className="flex flex-1 items-start gap-3">
-        <Checkbox checked={item.isPurchased} onCheckedChange={onToggle} aria-label={`Toggle ${item.name}`} />
+        <Checkbox
+          checked={item.isPurchased}
+          onCheckedChange={onToggle}
+          aria-label={`Toggle ${item.name}`}
+          onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => event.stopPropagation()}
+        />
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className={cn('font-medium', item.isPurchased && 'text-muted-foreground line-through')}>
               {item.nameOriginal || item.name}
             </p>
             {item.quantity !== undefined && <Badge variant="outline">{quantityLabel(item)}</Badge>}
-            <Badge variant="outline">{categoryName}</Badge>
+            {item.categoryId && showCategoryBadge && <Badge variant="outline">{categoryName}</Badge>}
           </div>
           {item.notes && <p className="text-sm text-muted-foreground">{item.notes}</p>}
           {item.purchasedAt && item.isPurchased && (
@@ -206,20 +236,70 @@ function ItemRow({
       <div className="flex flex-col items-end gap-1">
         {manualMode && (
           <div className="flex gap-1">
-            <Button variant="ghost" size="sm" onClick={onMoveUp} aria-label="Move item up">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(event) => {
+                event.stopPropagation()
+                onMoveUp?.()
+              }}
+              onKeyDown={(event) => event.stopPropagation()}
+              aria-label="Move item up"
+            >
               <ChevronUp className="size-4" aria-hidden />
             </Button>
-            <Button variant="ghost" size="sm" onClick={onMoveDown} aria-label="Move item down">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(event) => {
+                event.stopPropagation()
+                onMoveDown?.()
+              }}
+              onKeyDown={(event) => event.stopPropagation()}
+              aria-label="Move item down"
+            >
               <ChevronDown className="size-4" aria-hidden />
             </Button>
           </div>
         )}
-        <div className="flex gap-1">
-          <EditItemDialog item={item} categories={categoryOptions} onSave={onEdit} />
-          <Button variant="ghost" size="sm" onClick={onDelete}>
-            Delete
-          </Button>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 w-9 p-0"
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => event.stopPropagation()}
+              aria-label="Item actions"
+            >
+              <MoreHorizontal className="size-4" aria-hidden />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <EditItemDialog
+              item={item}
+              categories={categoryOptions}
+              onSave={onEdit}
+              trigger={
+                <DropdownMenuItem
+                  onSelect={(event) => {
+                    event.preventDefault()
+                  }}
+                >
+                  Edit
+                </DropdownMenuItem>
+              }
+            />
+            <DropdownMenuItem
+              onSelect={(event) => {
+                event.preventDefault()
+                onDelete()
+              }}
+            >
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   )
@@ -228,34 +308,18 @@ function ItemRow({
 interface TopBarProps {
   name: string
   onBack: () => void
-  inputValue: string
-  onInputChange: (value: string) => void
-  onAdd: (input: string) => Promise<void>
   onOpenMenu: () => void
+  searchQuery: string
+  onSearchChange: (value: string) => void
 }
 
 function TopBar({
   name,
   onBack,
-  inputValue,
-  onInputChange,
-  onAdd,
   onOpenMenu,
+  searchQuery,
+  onSearchChange,
 }: TopBarProps) {
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault()
-    const value = inputValue.trim()
-    if (!value) return
-    try {
-      await onAdd(value)
-      onInputChange('')
-    } finally {
-      inputRef.current?.focus()
-    }
-  }
-
   return (
     <div className="sticky top-4 z-30 -mx-4 bg-background/90 px-4 pb-3 pt-2 backdrop-blur">
       <div className="flex items-center justify-between gap-2">
@@ -276,15 +340,15 @@ function TopBar({
           </Button>
         </div>
       </div>
-      <form className="mt-3" onSubmit={handleSubmit}>
+      <div className="mt-3">
         <Input
-          ref={inputRef}
-          value={inputValue}
-          onChange={(event) => onInputChange(event.target.value)}
-          placeholder="Add items"
+          value={searchQuery}
+          onChange={(event) => onSearchChange(event.target.value)}
+          placeholder="Search items"
           className="w-full"
+          aria-label="Search items"
         />
-      </form>
+      </div>
     </div>
   )
 }
@@ -378,7 +442,7 @@ function OverflowSheet({
             <Button
               type="button"
               variant="outline"
-              className="h-auto w-full justify-between px-3 py-3"
+              className="h-auto w-full justify-between p-3"
               onClick={onClearPurchased}
               disabled={!canClearPurchased}
             >
@@ -388,7 +452,7 @@ function OverflowSheet({
             <Button
               type="button"
               variant="destructive"
-              className="h-auto w-full justify-between px-3 py-3"
+              className="h-auto w-full justify-between p-3"
               onClick={onDeleteList}
             >
               <span className="font-medium">Delete list</span>
@@ -420,9 +484,14 @@ export function ListDetailPage() {
   const deleteList = useAppStore((state) => state.deleteList)
   const reorderItems = useAppStore((state) => state.reorderItems)
   const setActiveList = useAppStore((state) => state.setActiveList)
+  const itemHistory = useAppStore((state) => state.itemHistory)
 
   const list = useMemo(() => lists.find((entry) => entry.id === safeId), [lists, safeId])
   const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const [quickAddValue, setQuickAddValue] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState<string>('auto')
+  const [showPurchased, setShowPurchased] = useState(true)
+  const addInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (safeId) setActiveList(safeId)
@@ -431,7 +500,8 @@ export function ListDetailPage() {
   const sortMode = list?.sortMode ?? 'category'
   const categoryOrder = list?.categoryOrder ?? DEFAULT_CATEGORY_ORDER
   const movePurchased = preferences.movePurchasedToBottom[safeId] ?? true
-  const inputValue = preferences.searchQueryByList[safeId] ?? ''
+  const searchQuery = preferences.searchQueryByList[safeId] ?? ''
+  const hasSearch = Boolean(searchQuery.trim())
 
   const categoryMap = useMemo(
     () => new Map(categories.map((category) => [category.id, category.name])),
@@ -443,35 +513,61 @@ export function ListDetailPage() {
     [items, safeId],
   )
 
+  const filteredItems = useMemo(() => {
+    if (!hasSearch) return listItems
+    const query = searchQuery.trim().toLowerCase()
+    return listItems.filter(
+      (item) =>
+        item.nameOriginal.toLowerCase().includes(query) ||
+        item.name.toLowerCase().includes(query) ||
+        (item.notes ?? '').toLowerCase().includes(query),
+    )
+  }, [hasSearch, listItems, searchQuery])
+
   const sortedItems = useMemo(
     () =>
-      sortItems(listItems, categories, {
+      sortItems(filteredItems, categories, {
         sortMode,
         categoryOrder,
         movePurchasedToBottom: movePurchased,
       }),
-    [listItems, categories, sortMode, categoryOrder, movePurchased],
+    [filteredItems, categories, sortMode, categoryOrder, movePurchased],
   )
 
-  const visibleItems = sortedItems
+  const unpurchasedItems = useMemo(
+    () => sortedItems.filter((item) => !item.isPurchased),
+    [sortedItems],
+  )
+  const purchasedItems = useMemo(() => sortedItems.filter((item) => item.isPurchased), [sortedItems])
 
-  const grouped = useMemo(() => {
-    if (sortMode !== 'category') {
-      return { all: visibleItems }
-    }
-    return visibleItems.reduce<Record<string, Item[]>>((acc, item) => {
-      const key = item.categoryId ?? 'uncategorized'
-      acc[key] = acc[key] ? [...acc[key], item] : [item]
-      return acc
-    }, {})
-  }, [visibleItems, sortMode])
+  const collapsePurchased = movePurchased && sortMode !== 'manual' && !hasSearch
+
+  useEffect(() => {
+    setShowPurchased(!collapsePurchased)
+  }, [collapsePurchased])
+
+  const groupItems = useMemo(
+    () =>
+      (collection: Item[]) =>
+        sortMode !== 'category'
+          ? { all: collection }
+          : collection.reduce<Record<string, Item[]>>((acc, item) => {
+              const key = item.categoryId ?? 'uncategorized'
+              acc[key] = acc[key] ? [...acc[key], item] : [item]
+              return acc
+            }, {}),
+    [sortMode],
+  )
+
+  const groupedUnpurchased = useMemo(() => groupItems(unpurchasedItems), [groupItems, unpurchasedItems])
+  const groupedPurchased = useMemo(() => groupItems(purchasedItems), [groupItems, purchasedItems])
   const purchasedCount = useMemo(
     () => listItems.filter((item) => item.isPurchased).length,
     [listItems],
   )
 
   const handleReorderItem = (itemId: string, delta: number) => {
-    const ids = visibleItems.map((item) => item.id)
+    const ids = sortedItems.map((item) => item.id)
     const current = ids.indexOf(itemId)
     if (current < 0) return
     const target = current + delta
@@ -490,8 +586,15 @@ export function ListDetailPage() {
     [categoryOrder, categories],
   )
 
-  const order = sortMode === 'category' ? categoryOrder : ['all']
+  const order = useMemo(
+    () => (sortMode === 'category' ? categoryOrder : ['all']),
+    [categoryOrder, sortMode],
+  )
   const orderMap = useMemo(() => new Map(order.map((categoryId, index) => [categoryId, index])), [order])
+  const suggestions = useMemo(
+    () => buildHistorySuggestions(quickAddValue.trim(), itemHistory),
+    [itemHistory, quickAddValue],
+  )
 
   if (!list || !id) {
     return (
@@ -504,68 +607,114 @@ export function ListDetailPage() {
     )
   }
 
-  const handleClearPurchased = () => {
-    if (window.confirm('Clear purchased items?')) clearPurchased(id)
+  const resolveCategory = (suggestedCategoryId?: string) => {
+    if (selectedCategory === 'auto') return suggestedCategoryId
+    if (selectedCategory === UNASSIGNED_CATEGORY_VALUE) return undefined
+    return selectedCategory
   }
 
-  const handleDeleteList = () => {
-    if (window.confirm('Delete this list and its items?')) {
-      deleteList(id)
-      navigate('/')
+  const handleAddItems = async (value: string, suggestedCategoryId?: string) => {
+    const text = value.trim()
+    if (!text) {
+      addInputRef.current?.focus()
+      return
+    }
+    try {
+      await addItemQuick(id, text, resolveCategory(suggestedCategoryId))
+      setQuickAddValue('')
+    } finally {
+      addInputRef.current?.focus()
     }
   }
 
+  const handleClearPurchased = async () => {
+    await clearPurchased(id)
+    setIsSheetOpen(false)
+  }
+
+  const handleDeleteList = async () => {
+    await deleteList(id)
+    setIsSheetOpen(false)
+    navigate('/')
+  }
+
+  const showCategoryBadge = !(sortMode === 'category' && !hasSearch)
+
+  const renderGroups = (groupedItems: Record<string, Item[]>) =>
+    Object.entries(groupedItems)
+      .sort((a, b) => {
+        const aIndex = orderMap.get(a[0]) ?? order.length + 1
+        const bIndex = orderMap.get(b[0]) ?? order.length + 1
+        return aIndex - bIndex
+      })
+      .map(([categoryId, categoryItems]) => (
+        <div key={categoryId} className="space-y-2">
+          {sortMode === 'category' && (
+            <div className="flex items-center justify-between px-1">
+              <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                {categoryMap.get(categoryId) ?? 'Other'}
+              </h2>
+              <span className="text-xs text-muted-foreground">{categoryItems.length} items</span>
+            </div>
+          )}
+          <div className="space-y-2">
+            {categoryItems.map((item) => (
+              <ItemRow
+                key={item.id}
+                item={item}
+                categoryName={categoryMap.get(item.categoryId ?? '') ?? 'Other'}
+                onToggle={() => toggleItemPurchased(item.id)}
+                onDelete={() => deleteItem(item.id)}
+                onEdit={(updates) => updateItem(item.id, updates)}
+                onMoveUp={list.sortMode === 'manual' ? () => handleReorderItem(item.id, -1) : undefined}
+                onMoveDown={list.sortMode === 'manual' ? () => handleReorderItem(item.id, 1) : undefined}
+                manualMode={list.sortMode === 'manual'}
+                categoryOptions={listCategoryOptions}
+                showCategoryBadge={showCategoryBadge}
+              />
+            ))}
+          </div>
+        </div>
+      ))
+
   return (
-    <div className="relative mx-auto max-w-3xl pb-16 pt-4">
+    <div className="relative mx-auto max-w-3xl pb-32 pt-4">
       <TopBar
         name={list.name}
         onBack={() => navigate('/')}
-        inputValue={inputValue}
-        onInputChange={(value) => setSearchQuery(id, value)}
-        onAdd={(value) => addItemQuick(id, value)}
         onOpenMenu={() => setIsSheetOpen(true)}
+        searchQuery={searchQuery}
+        onSearchChange={(value) => setSearchQuery(id, value)}
       />
 
       <div className="mt-3 space-y-5">
-        {Object.entries(grouped)
-          .sort((a, b) => {
-            const aIndex = orderMap.get(a[0]) ?? order.length + 1
-            const bIndex = orderMap.get(b[0]) ?? order.length + 1
-            return aIndex - bIndex
-          })
-          .map(([categoryId, categoryItems]) => (
-            <div key={categoryId} className="space-y-2">
-              {sortMode === 'category' && (
-                <div className="flex items-center justify-between px-1">
-                  <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    {categoryMap.get(categoryId) ?? 'Other'}
-                  </h2>
-                  <span className="text-xs text-muted-foreground">{categoryItems.length} items</span>
-                </div>
-              )}
-              <div className="space-y-2">
-                {categoryItems.map((item) => (
-                  <ItemRow
-                    key={item.id}
-                    item={item}
-                    categoryName={categoryMap.get(item.categoryId ?? '') ?? 'Other'}
-                    onToggle={() => toggleItemPurchased(item.id)}
-                    onDelete={() => deleteItem(item.id)}
-                    onEdit={(updates) => updateItem(item.id, updates)}
-                    onMoveUp={list.sortMode === 'manual' ? () => handleReorderItem(item.id, -1) : undefined}
-                    onMoveDown={list.sortMode === 'manual' ? () => handleReorderItem(item.id, 1) : undefined}
-                    manualMode={list.sortMode === 'manual'}
-                    categoryOptions={listCategoryOptions}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
+        {renderGroups(groupedUnpurchased)}
 
-        {visibleItems.length === 0 && (
+        {unpurchasedItems.length === 0 && purchasedItems.length === 0 && (
           <div className="rounded-2xl border border-border/60 bg-card/70 p-6 text-center">
             <p className="font-semibold">No items yet</p>
-            <p className="text-sm text-muted-foreground">Use the add bar above to capture ingredients fast.</p>
+            <p className="text-sm text-muted-foreground">Use the add bar below to capture ingredients fast.</p>
+          </div>
+        )}
+
+        {collapsePurchased && purchasedItems.length > 0 && !showPurchased && (
+          <div className="flex justify-start">
+            <Button variant="outline" onClick={() => setShowPurchased(true)}>
+              Show purchased ({purchasedItems.length})
+            </Button>
+          </div>
+        )}
+
+        {(!collapsePurchased || showPurchased) && purchasedItems.length > 0 && (
+          <div className="space-y-2">
+            {collapsePurchased && (
+              <div className="flex justify-end">
+                <Button variant="ghost" size="sm" onClick={() => setShowPurchased(false)}>
+                  Hide purchased
+                </Button>
+              </div>
+            )}
+            {renderGroups(groupedPurchased)}
           </div>
         )}
       </div>
@@ -584,6 +733,64 @@ export function ListDetailPage() {
         purchasedCount={purchasedCount}
         updatedAt={list.updatedAt}
       />
+
+      <div className="fixed inset-x-0 bottom-0 border-t border-border/60 bg-background/95 backdrop-blur">
+        <div className="mx-auto flex max-w-3xl flex-col gap-2 px-4 py-3">
+          <form
+            className="flex flex-col gap-2 sm:flex-row sm:items-center"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void handleAddItems(quickAddValue)
+            }}
+          >
+            <Input
+              ref={addInputRef}
+              value={quickAddValue}
+              onChange={(event) => setQuickAddValue(event.target.value)}
+              placeholder="Add items"
+              className="flex-1"
+            />
+            <div className="flex items-center gap-2 sm:w-[320px]">
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Pick a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">Auto</SelectItem>
+                  <SelectItem value={UNASSIGNED_CATEGORY_VALUE}>Unassigned</SelectItem>
+                  {listCategoryOptions.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button type="submit" className="whitespace-nowrap">
+                Add
+              </Button>
+            </div>
+          </form>
+          {suggestions.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {suggestions.map((suggestion) => (
+                <Button
+                  key={suggestion.id}
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => handleAddItems(suggestion.nameCanonical, suggestion.defaultCategoryId)}
+                >
+                  {suggestion.nameCanonical}
+                  {selectedCategory === 'auto' && suggestion.defaultCategoryId && (
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      {categoryMap.get(suggestion.defaultCategoryId)}
+                    </span>
+                  )}
+                </Button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

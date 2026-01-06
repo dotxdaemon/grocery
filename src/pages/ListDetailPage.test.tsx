@@ -84,7 +84,7 @@ describe('ListDetailPage quick add', () => {
     addInput.focus()
     await user.type(addInput, 'eggs{enter}')
 
-    await waitFor(() => expect(addItemQuick).toHaveBeenCalledWith(listId, 'eggs'))
+    await waitFor(() => expect(addItemQuick).toHaveBeenCalledWith(listId, 'eggs', undefined))
     expect(addInput).toHaveFocus()
     expect(addInput).not.toBeDisabled()
   })

@@ -68,6 +68,7 @@ export interface AppState {
   exportData: () => Promise<ExportPayload>
   importData: (payload: unknown) => Promise<ReturnType<typeof validateImportedData>>
   undo: () => Promise<void>
+  clearUndo: () => void
 }
 
 const emptyData = (): ExportPayload => ({
@@ -247,57 +248,78 @@ export const useAppStore = create<AppState>()(
       },
       async addItemQuick(listId, input, categoryId) {
         const state = get()
-        const parsed = parseQuickAddInput(input)
-        const now = Date.now()
-        const inferredCategory = categoryId ?? inferCategoryFromHistory(parsed.nameCanonical, state.itemHistory)
-        const item: Item = {
-          id: crypto.randomUUID(),
-          listId,
-          name: parsed.nameCanonical,
-          nameOriginal: parsed.nameOriginal.trim(),
-          quantity: parsed.quantity,
-          unit: parsed.unit,
-          categoryId: inferredCategory,
-          notes: '',
-          isPurchased: false,
-          position: state.items.filter((entry) => entry.listId === listId && !entry.isPurchased).length,
-          createdAt: now,
-          updatedAt: now,
-        }
+        const chunks = input
+          .split(/[,\n;]+/)
+          .map((chunk) => chunk.trim())
+          .filter(Boolean)
+        if (!chunks.length) return
+
         const snapshot = snapshotFromState(state)
-        const items = [...state.items, item]
+        const now = Date.now()
+        let itemHistory = state.itemHistory
+        const newItems: Item[] = []
+        let positionCursor = state.items.filter(
+          (entry) => entry.listId === listId && !entry.isPurchased,
+        ).length
+
+        for (const chunk of chunks) {
+          const parsed = parseQuickAddInput(chunk)
+          if (!parsed.nameCanonical) continue
+
+          const inferredCategory =
+            categoryId ?? inferCategoryFromHistory(parsed.nameCanonical, itemHistory)
+          const item: Item = {
+            id: crypto.randomUUID(),
+            listId,
+            name: parsed.nameCanonical,
+            nameOriginal: parsed.nameOriginal,
+            quantity: parsed.quantity,
+            unit: parsed.unit,
+            categoryId: inferredCategory,
+            notes: '',
+            isPurchased: false,
+            position: positionCursor,
+            createdAt: now,
+            updatedAt: now,
+          }
+          positionCursor += 1
+          newItems.push(item)
+
+          const existingHistory = itemHistory.find(
+            (entry) => entry.nameCanonical === parsed.nameCanonical,
+          )
+          if (existingHistory) {
+            itemHistory = itemHistory.map((entry) =>
+              entry.id === existingHistory.id
+                ? {
+                    ...entry,
+                    timesUsed: entry.timesUsed + 1,
+                    lastUsedAt: now,
+                    defaultCategoryId: inferredCategory ?? entry.defaultCategoryId,
+                  }
+                : entry,
+            )
+          } else {
+            itemHistory = [
+              ...itemHistory,
+              {
+                id: crypto.randomUUID(),
+                nameCanonical: parsed.nameCanonical,
+                defaultCategoryId: inferredCategory,
+                lastUsedAt: now,
+                timesUsed: 1,
+                isFavorite: false,
+              },
+            ]
+          }
+        }
+
+        if (!newItems.length) return
+
+        const items = [...state.items, ...newItems]
         const lists = state.lists.map((list) =>
           list.id === listId ? { ...list, updatedAt: now } : list,
         )
-
-        const existingHistory = state.itemHistory.find(
-          (entry) => entry.nameCanonical === parsed.nameCanonical,
-        )
-        let itemHistory: ItemHistoryEntry[]
-        if (existingHistory) {
-          itemHistory = state.itemHistory.map((entry) =>
-            entry.id === existingHistory.id
-              ? {
-                  ...entry,
-                  timesUsed: entry.timesUsed + 1,
-                  lastUsedAt: now,
-                  defaultCategoryId: inferredCategory ?? entry.defaultCategoryId,
-                }
-              : entry,
-          )
-        } else {
-          itemHistory = [
-            ...state.itemHistory,
-            {
-              id: crypto.randomUUID(),
-              nameCanonical: parsed.nameCanonical,
-              defaultCategoryId: inferredCategory,
-              lastUsedAt: now,
-              timesUsed: 1,
-              isFavorite: false,
-            },
-          ]
-        }
 
         set({ items, lists, itemHistory, lastUndo: { label: 'Added item', snapshot } })
         await persistSnapshot(snapshotFromState({ ...state, items, lists, itemHistory }), state.storageMode)
@@ -506,6 +528,9 @@ export const useAppStore = create<AppState>()(
           lastUndo: undefined,
         })
         await persistSnapshot(state.lastUndo.snapshot, state.storageMode)
+      },
+      clearUndo() {
+        set({ lastUndo: undefined })
       },
     }),
     {
