@@ -311,7 +311,7 @@ interface TopBarProps {
   quickAddValue: string
   onQuickAddChange: (value: string) => void
   onSubmit: () => void
-  inputRef: RefObject<HTMLInputElement>
+  inputRef: RefObject<HTMLInputElement | null>
 }
 
 function TopBar({
