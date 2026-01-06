@@ -1,6 +1,6 @@
 // ABOUTME: Displays a single grocery list with items, quick add, and bulk actions.
-// ABOUTME: Supports search, sorting, manual reordering, editing, and history suggestions.
-import { useEffect, useMemo, useState } from 'react'
+// ABOUTME: Supports sorting, manual reordering, editing, and history suggestions.
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ChevronDown, ChevronUp, MoreHorizontal, Sparkles } from 'lucide-react'
 import { Badge } from '../components/ui/badge'
@@ -228,8 +228,8 @@ function ItemRow({
 interface TopBarProps {
   name: string
   onBack: () => void
-  searchQuery: string
-  onSearchChange: (value: string) => void
+  inputValue: string
+  onInputChange: (value: string) => void
   onAdd: (input: string) => Promise<void>
   onOpenMenu: () => void
 }
@@ -237,23 +237,22 @@ interface TopBarProps {
 function TopBar({
   name,
   onBack,
-  searchQuery,
-  onSearchChange,
+  inputValue,
+  onInputChange,
   onAdd,
   onOpenMenu,
 }: TopBarProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
-    const value = searchQuery.trim()
+    const value = inputValue.trim()
     if (!value) return
-    setIsSubmitting(true)
     try {
       await onAdd(value)
-      onSearchChange('')
+      onInputChange('')
     } finally {
-      setIsSubmitting(false)
+      inputRef.current?.focus()
     }
   }
 
@@ -279,11 +278,11 @@ function TopBar({
       </div>
       <form className="mt-3" onSubmit={handleSubmit}>
         <Input
-          value={searchQuery}
-          onChange={(event) => onSearchChange(event.target.value)}
+          ref={inputRef}
+          value={inputValue}
+          onChange={(event) => onInputChange(event.target.value)}
           placeholder="Add items"
           className="w-full"
-          disabled={isSubmitting}
         />
       </form>
     </div>
@@ -432,7 +431,7 @@ export function ListDetailPage() {
   const sortMode = list?.sortMode ?? 'category'
   const categoryOrder = list?.categoryOrder ?? DEFAULT_CATEGORY_ORDER
   const movePurchased = preferences.movePurchasedToBottom[safeId] ?? true
-  const searchQuery = preferences.searchQueryByList[safeId] ?? ''
+  const inputValue = preferences.searchQueryByList[safeId] ?? ''
 
   const categoryMap = useMemo(
     () => new Map(categories.map((category) => [category.id, category.name])),
@@ -454,32 +453,25 @@ export function ListDetailPage() {
     [listItems, categories, sortMode, categoryOrder, movePurchased],
   )
 
-  const filteredItems = useMemo(() => {
-    if (!searchQuery) return sortedItems
-    const query = searchQuery.toLowerCase()
-    return sortedItems.filter(
-      (item) =>
-        item.nameOriginal.toLowerCase().includes(query) || item.name.toLowerCase().includes(query),
-    )
-  }, [sortedItems, searchQuery])
+  const visibleItems = sortedItems
 
   const grouped = useMemo(() => {
     if (sortMode !== 'category') {
-      return { all: filteredItems }
+      return { all: visibleItems }
     }
-    return filteredItems.reduce<Record<string, Item[]>>((acc, item) => {
+    return visibleItems.reduce<Record<string, Item[]>>((acc, item) => {
       const key = item.categoryId ?? 'uncategorized'
       acc[key] = acc[key] ? [...acc[key], item] : [item]
       return acc
     }, {})
-  }, [filteredItems, sortMode])
+  }, [visibleItems, sortMode])
   const purchasedCount = useMemo(
     () => listItems.filter((item) => item.isPurchased).length,
     [listItems],
   )
 
   const handleReorderItem = (itemId: string, delta: number) => {
-    const ids = filteredItems.map((item) => item.id)
+    const ids = visibleItems.map((item) => item.id)
     const current = ids.indexOf(itemId)
     if (current < 0) return
     const target = current + delta
@@ -528,8 +520,8 @@ export function ListDetailPage() {
       <TopBar
         name={list.name}
         onBack={() => navigate('/')}
-        searchQuery={searchQuery}
-        onSearchChange={(value) => setSearchQuery(id, value)}
+        inputValue={inputValue}
+        onInputChange={(value) => setSearchQuery(id, value)}
         onAdd={(value) => addItemQuick(id, value)}
         onOpenMenu={() => setIsSheetOpen(true)}
       />
@@ -570,7 +562,7 @@ export function ListDetailPage() {
             </div>
           ))}
 
-        {filteredItems.length === 0 && (
+        {visibleItems.length === 0 && (
           <div className="rounded-2xl border border-border/60 bg-card/70 p-6 text-center">
             <p className="font-semibold">No items yet</p>
             <p className="text-sm text-muted-foreground">Use the add bar above to capture ingredients fast.</p>

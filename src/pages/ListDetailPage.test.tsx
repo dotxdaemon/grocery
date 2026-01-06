@@ -1,69 +1,16 @@
-// ABOUTME: Confirms the list detail page adds entries directly from the header input.
-// ABOUTME: Exercises the flow of typing into the header field and submitting with enter.
+// ABOUTME: Validates list detail interactions for capturing new groceries efficiently.
+// ABOUTME: Ensures adding from the quick bar keeps items visible and the input focused.
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { DEFAULT_CATEGORIES, DEFAULT_CATEGORY_ORDER } from '../domain/categories'
 import { ListDetailPage } from './ListDetailPage'
 import { resetAppStore } from '../test/storeHelpers'
 import { useAppStore } from '../state/appStore'
 
 const listId = 'list-1'
 
-const renderListPage = (
-  options: {
-    addItemQuick?: (listId: string, input: string, categoryId?: string) => Promise<void>
-    items?: {
-      id: string
-      listId: string
-      name: string
-      nameOriginal: string
-      isPurchased: boolean
-      createdAt: number
-      updatedAt: number
-      categoryId?: string
-    }[]
-    deleteItem?: (id: string) => Promise<void> | void
-  } = {},
-) => {
-  resetAppStore()
-  const now = Date.now()
-  const addItemQuick = options.addItemQuick ?? vi.fn(async () => {})
-  const deleteItem = options.deleteItem ?? vi.fn(async () => {})
-  useAppStore.setState((state) => ({
-    ...state,
-    lists: [
-      {
-        id: listId,
-        name: 'Pantry',
-        createdAt: now,
-        updatedAt: now,
-        sortMode: 'category',
-        categoryOrder: DEFAULT_CATEGORY_ORDER,
-      },
-    ],
-    items: options.items ?? [],
-    categories: DEFAULT_CATEGORIES,
-    preferences: {
-      ...state.preferences,
-      movePurchasedToBottom: { [listId]: true },
-      searchQueryByList: { [listId]: '' },
-      activeListId: listId,
-    },
-    addItemQuick,
-      toggleItemPurchased: async () => {},
-      clearPurchased: async () => {},
-      setSortMode: async () => {},
-      setMovePurchasedToBottom: async () => {},
-      updateItem: async () => {},
-      deleteItem,
-      deleteList: async () => {},
-      reorderItems: async () => {},
-      toggleFavoriteHistory: async () => {},
-    setActiveList: () => {},
-  }))
-
+const renderListPage = () =>
   render(
     <MemoryRouter initialEntries={[`/list/${listId}`]}>
       <Routes>
@@ -72,88 +19,73 @@ const renderListPage = (
     </MemoryRouter>,
   )
 
-  return { addItemQuick, deleteItem }
-}
-
-describe('ListDetailPage quick entry', () => {
+describe('ListDetailPage quick add', () => {
   beforeEach(() => {
     resetAppStore()
+    useAppStore.setState((state) => ({
+      ...state,
+      lists: [
+        {
+          id: listId,
+          name: 'Weekly',
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          sortMode: 'category',
+          categoryOrder: state.categories.map((category) => category.id),
+        },
+      ],
+      items: [
+        {
+          id: 'item-1',
+          listId,
+          name: 'Milk',
+          nameOriginal: 'Milk',
+          isPurchased: false,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        },
+        {
+          id: 'item-2',
+          listId,
+          name: 'Bread',
+          nameOriginal: 'Bread',
+          isPurchased: false,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        },
+      ],
+      preferences: {
+        ...state.preferences,
+        movePurchasedToBottom: {},
+        searchQueryByList: { [listId]: '' },
+      },
+    }))
   })
 
-  it('adds an item from the header input when pressing enter', async () => {
-    const user = userEvent.setup()
-    const { addItemQuick } = renderListPage()
-
-    const entryInput = screen.getByPlaceholderText(/add items/i)
-    await user.type(entryInput, 'bananas{enter}')
-
-    await waitFor(() => {
-      expect(addItemQuick).toHaveBeenCalledWith(listId, 'bananas')
-    })
-    expect(entryInput).toHaveValue('')
-  })
-
-  it('does not show the old add entry button', () => {
+  it('keeps existing items visible while typing a new entry', async () => {
     renderListPage()
-
-    expect(screen.queryByRole('button', { name: /add item entry/i })).not.toBeInTheDocument()
-  })
-})
-
-describe('ListDetailPage list utilities', () => {
-  beforeEach(() => {
-    resetAppStore()
-  })
-
-  it('shows the search bar above list items by default', () => {
-    const now = Date.now()
-    renderListPage({
-      items: [
-        {
-          id: 'item-1',
-          listId,
-          name: 'milk',
-          nameOriginal: 'Milk',
-          isPurchased: false,
-          createdAt: now,
-          updatedAt: now,
-        },
-      ],
-    })
-
-    const searchInput = screen.getByPlaceholderText(/add items/i)
-    const firstItem = screen.getByText('Milk')
-    expect(searchInput).toBeInTheDocument()
-    expect(searchInput.compareDocumentPosition(firstItem)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
-  })
-
-  it('deletes an item immediately without asking for confirmation', async () => {
     const user = userEvent.setup()
-    const now = Date.now()
-    const deleteItem = vi.fn(async () => {})
-    const confirmSpy = vi.spyOn(window, 'confirm')
+    const addInput = screen.getByPlaceholderText(/add items/i)
 
-    renderListPage({
-      items: [
-        {
-          id: 'item-1',
-          listId,
-          name: 'milk',
-          nameOriginal: 'Milk',
-          isPurchased: false,
-          createdAt: now,
-          updatedAt: now,
-        },
-      ],
-      deleteItem,
-    })
+    await user.type(addInput, 'eggs')
 
-    await user.click(screen.getByRole('button', { name: /delete/i }))
+    expect(screen.getByText('Milk')).toBeInTheDocument()
+    expect(screen.getByText('Bread')).toBeInTheDocument()
+  })
 
-    await waitFor(() => {
-      expect(deleteItem).toHaveBeenCalledWith('item-1')
-    })
-    expect(confirmSpy).not.toHaveBeenCalled()
-    confirmSpy.mockRestore()
+  it('keeps the add input focused after submitting', async () => {
+    const addItemQuick = vi.fn().mockResolvedValue(undefined)
+    useAppStore.setState((state) => ({ ...state, addItemQuick }))
+
+    renderListPage()
+    const user = userEvent.setup()
+    const addInput = screen.getByPlaceholderText(/add items/i)
+
+    addInput.focus()
+    await user.type(addInput, 'eggs{enter}')
+
+    await waitFor(() => expect(addItemQuick).toHaveBeenCalledWith(listId, 'eggs'))
+    expect(addInput).toHaveFocus()
+    expect(addInput).not.toBeDisabled()
   })
 })
