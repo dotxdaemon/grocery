@@ -1,6 +1,6 @@
 // ABOUTME: Displays a single grocery list with items, quick add, and bulk actions.
-// ABOUTME: Supports sorting, manual reordering, editing, and history suggestions.
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+// ABOUTME: Supports sorting, manual reordering, editing, and list management.
+import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ChevronDown, ChevronUp, MoreHorizontal, Sparkles } from 'lucide-react'
 import { Badge } from '../components/ui/badge'
@@ -26,7 +26,6 @@ import { Label } from '../components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
 import { Textarea } from '../components/ui/textarea'
 import { DEFAULT_CATEGORY_ORDER } from '../domain/categories'
-import { buildHistorySuggestions } from '../domain/history'
 import { sortItems } from '../domain/sort'
 import type { Item, QuantityUnit, SortMode } from '../domain/types'
 import { useAppStore } from '../state/appStore'
@@ -309,16 +308,20 @@ interface TopBarProps {
   name: string
   onBack: () => void
   onOpenMenu: () => void
-  searchQuery: string
-  onSearchChange: (value: string) => void
+  quickAddValue: string
+  onQuickAddChange: (value: string) => void
+  onSubmit: () => void
+  inputRef: RefObject<HTMLInputElement>
 }
 
 function TopBar({
   name,
   onBack,
   onOpenMenu,
-  searchQuery,
-  onSearchChange,
+  quickAddValue,
+  onQuickAddChange,
+  onSubmit,
+  inputRef,
 }: TopBarProps) {
   return (
     <div className="sticky top-4 z-30 -mx-4 bg-background/90 px-4 pb-3 pt-2 backdrop-blur">
@@ -340,15 +343,25 @@ function TopBar({
           </Button>
         </div>
       </div>
-      <div className="mt-3">
+      <form
+        className="mt-3 flex items-center gap-2"
+        onSubmit={(event) => {
+          event.preventDefault()
+          onSubmit()
+        }}
+      >
         <Input
-          value={searchQuery}
-          onChange={(event) => onSearchChange(event.target.value)}
-          placeholder="Search items"
+          ref={inputRef}
+          value={quickAddValue}
+          onChange={(event) => onQuickAddChange(event.target.value)}
+          placeholder="Add an item"
           className="w-full"
-          aria-label="Search items"
+          aria-label="Add an item"
         />
-      </div>
+        <Button type="submit" className="shrink-0">
+          Add
+        </Button>
+      </form>
     </div>
   )
 }
@@ -478,18 +491,15 @@ export function ListDetailPage() {
   const clearPurchased = useAppStore((state) => state.clearPurchased)
   const setSortMode = useAppStore((state) => state.setSortMode)
   const setMovePurchasedToBottom = useAppStore((state) => state.setMovePurchasedToBottom)
-  const setSearchQuery = useAppStore((state) => state.setSearchQuery)
   const updateItem = useAppStore((state) => state.updateItem)
   const deleteItem = useAppStore((state) => state.deleteItem)
   const deleteList = useAppStore((state) => state.deleteList)
   const reorderItems = useAppStore((state) => state.reorderItems)
   const setActiveList = useAppStore((state) => state.setActiveList)
-  const itemHistory = useAppStore((state) => state.itemHistory)
 
   const list = useMemo(() => lists.find((entry) => entry.id === safeId), [lists, safeId])
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [quickAddValue, setQuickAddValue] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<string>('auto')
   const [showPurchased, setShowPurchased] = useState(true)
   const addInputRef = useRef<HTMLInputElement>(null)
 
@@ -500,8 +510,6 @@ export function ListDetailPage() {
   const sortMode = list?.sortMode ?? 'category'
   const categoryOrder = list?.categoryOrder ?? DEFAULT_CATEGORY_ORDER
   const movePurchased = preferences.movePurchasedToBottom[safeId] ?? true
-  const searchQuery = preferences.searchQueryByList[safeId] ?? ''
-  const hasSearch = Boolean(searchQuery.trim())
 
   const categoryMap = useMemo(
     () => new Map(categories.map((category) => [category.id, category.name])),
@@ -513,25 +521,14 @@ export function ListDetailPage() {
     [items, safeId],
   )
 
-  const filteredItems = useMemo(() => {
-    if (!hasSearch) return listItems
-    const query = searchQuery.trim().toLowerCase()
-    return listItems.filter(
-      (item) =>
-        item.nameOriginal.toLowerCase().includes(query) ||
-        item.name.toLowerCase().includes(query) ||
-        (item.notes ?? '').toLowerCase().includes(query),
-    )
-  }, [hasSearch, listItems, searchQuery])
-
   const sortedItems = useMemo(
     () =>
-      sortItems(filteredItems, categories, {
+      sortItems(listItems, categories, {
         sortMode,
         categoryOrder,
         movePurchasedToBottom: movePurchased,
       }),
-    [filteredItems, categories, sortMode, categoryOrder, movePurchased],
+    [listItems, categories, sortMode, categoryOrder, movePurchased],
   )
 
   const unpurchasedItems = useMemo(
@@ -540,7 +537,7 @@ export function ListDetailPage() {
   )
   const purchasedItems = useMemo(() => sortedItems.filter((item) => item.isPurchased), [sortedItems])
 
-  const collapsePurchased = movePurchased && sortMode !== 'manual' && !hasSearch
+  const collapsePurchased = movePurchased && sortMode !== 'manual'
 
   useEffect(() => {
     setShowPurchased(!collapsePurchased)
@@ -591,11 +588,6 @@ export function ListDetailPage() {
     [categoryOrder, sortMode],
   )
   const orderMap = useMemo(() => new Map(order.map((categoryId, index) => [categoryId, index])), [order])
-  const suggestions = useMemo(
-    () => buildHistorySuggestions(quickAddValue.trim(), itemHistory),
-    [itemHistory, quickAddValue],
-  )
-
   if (!list || !id) {
     return (
       <Card className="space-y-3">
@@ -607,20 +599,14 @@ export function ListDetailPage() {
     )
   }
 
-  const resolveCategory = (suggestedCategoryId?: string) => {
-    if (selectedCategory === 'auto') return suggestedCategoryId
-    if (selectedCategory === UNASSIGNED_CATEGORY_VALUE) return undefined
-    return selectedCategory
-  }
-
-  const handleAddItems = async (value: string, suggestedCategoryId?: string) => {
+  const handleAddItems = async (value: string) => {
     const text = value.trim()
     if (!text) {
       addInputRef.current?.focus()
       return
     }
     try {
-      await addItemQuick(id, text, resolveCategory(suggestedCategoryId))
+      await addItemQuick(id, text, undefined)
       setQuickAddValue('')
     } finally {
       addInputRef.current?.focus()
@@ -638,7 +624,7 @@ export function ListDetailPage() {
     navigate('/')
   }
 
-  const showCategoryBadge = !(sortMode === 'category' && !hasSearch)
+  const showCategoryBadge = sortMode !== 'category'
 
   const renderGroups = (groupedItems: Record<string, Item[]>) =>
     Object.entries(groupedItems)
@@ -678,13 +664,15 @@ export function ListDetailPage() {
       ))
 
   return (
-    <div className="relative mx-auto max-w-3xl pb-32 pt-4">
+    <div className="relative mx-auto max-w-3xl pb-12 pt-4">
       <TopBar
         name={list.name}
         onBack={() => navigate('/')}
         onOpenMenu={() => setIsSheetOpen(true)}
-        searchQuery={searchQuery}
-        onSearchChange={(value) => setSearchQuery(id, value)}
+        quickAddValue={quickAddValue}
+        onQuickAddChange={setQuickAddValue}
+        onSubmit={() => void handleAddItems(quickAddValue)}
+        inputRef={addInputRef}
       />
 
       <div className="mt-3 space-y-5">
@@ -693,7 +681,7 @@ export function ListDetailPage() {
         {unpurchasedItems.length === 0 && purchasedItems.length === 0 && (
           <div className="rounded-2xl border border-border/60 bg-card/70 p-6 text-center">
             <p className="font-semibold">No items yet</p>
-            <p className="text-sm text-muted-foreground">Use the add bar below to capture ingredients fast.</p>
+            <p className="text-sm text-muted-foreground">Use the add bar to capture ingredients fast.</p>
           </div>
         )}
 
@@ -733,64 +721,6 @@ export function ListDetailPage() {
         purchasedCount={purchasedCount}
         updatedAt={list.updatedAt}
       />
-
-      <div className="fixed inset-x-0 bottom-0 border-t border-border/60 bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl flex-col gap-2 px-4 py-3">
-          <form
-            className="flex flex-col gap-2 sm:flex-row sm:items-center"
-            onSubmit={(event) => {
-              event.preventDefault()
-              void handleAddItems(quickAddValue)
-            }}
-          >
-            <Input
-              ref={addInputRef}
-              value={quickAddValue}
-              onChange={(event) => setQuickAddValue(event.target.value)}
-              placeholder="Add items"
-              className="flex-1"
-            />
-            <div className="flex items-center gap-2 sm:w-[320px]">
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Pick a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="auto">Auto</SelectItem>
-                  <SelectItem value={UNASSIGNED_CATEGORY_VALUE}>Unassigned</SelectItem>
-                  {listCategoryOptions.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button type="submit" className="whitespace-nowrap">
-                Add
-              </Button>
-            </div>
-          </form>
-          {suggestions.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {suggestions.map((suggestion) => (
-                <Button
-                  key={suggestion.id}
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => handleAddItems(suggestion.nameCanonical, suggestion.defaultCategoryId)}
-                >
-                  {suggestion.nameCanonical}
-                  {selectedCategory === 'auto' && suggestion.defaultCategoryId && (
-                    <span className="ml-2 text-xs text-muted-foreground">
-                      {categoryMap.get(suggestion.defaultCategoryId)}
-                    </span>
-                  )}
-                </Button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   )
 }

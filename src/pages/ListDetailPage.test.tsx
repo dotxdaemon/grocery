@@ -1,5 +1,5 @@
 // ABOUTME: Validates list detail interactions for capturing new groceries efficiently.
-// ABOUTME: Ensures adding from the quick bar keeps items visible and the input focused.
+// ABOUTME: Ensures the header add bar keeps items visible and focused while adding.
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -19,7 +19,7 @@ const renderListPage = () =>
     </MemoryRouter>,
   )
 
-describe('ListDetailPage quick add', () => {
+describe('ListDetailPage header add bar', () => {
   beforeEach(() => {
     resetAppStore()
     useAppStore.setState((state) => ({
@@ -65,7 +65,7 @@ describe('ListDetailPage quick add', () => {
   it('keeps existing items visible while typing a new entry', async () => {
     renderListPage()
     const user = userEvent.setup()
-    const addInput = screen.getByPlaceholderText(/add items/i)
+    const addInput = screen.getByPlaceholderText(/add an item/i)
 
     await user.type(addInput, 'eggs')
 
@@ -73,19 +73,19 @@ describe('ListDetailPage quick add', () => {
     expect(screen.getByText('Bread')).toBeInTheDocument()
   })
 
-  it('keeps the add input focused after submitting', async () => {
+  it('adds via enter and keeps the add input focused', async () => {
     const addItemQuick = vi.fn().mockResolvedValue(undefined)
     useAppStore.setState((state) => ({ ...state, addItemQuick }))
 
     renderListPage()
     const user = userEvent.setup()
-    const addInput = screen.getByPlaceholderText(/add items/i)
+    const addInput = screen.getByPlaceholderText(/add an item/i)
 
     addInput.focus()
     await user.type(addInput, 'eggs{enter}')
 
     await waitFor(() => expect(addItemQuick).toHaveBeenCalledWith(listId, 'eggs', undefined))
     expect(addInput).toHaveFocus()
-    expect(addInput).not.toBeDisabled()
+    expect(addInput).toHaveValue('')
   })
 })
