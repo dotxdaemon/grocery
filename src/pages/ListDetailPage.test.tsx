@@ -1,5 +1,5 @@
-// ABOUTME: Confirms the list detail add bar uses plus-triggered text entries instead of a fixed input.
-// ABOUTME: Exercises the flow of creating and submitting a new item via the plus control.
+// ABOUTME: Confirms the list detail page adds entries directly from the header input.
+// ABOUTME: Exercises the flow of typing into the header field and submitting with enter.
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -52,16 +52,15 @@ const renderListPage = (
       activeListId: listId,
     },
     addItemQuick,
-    toggleItemPurchased: async () => {},
-    clearPurchased: async () => {},
-    setSortMode: async () => {},
-    setMovePurchasedToBottom: async () => {},
-    setSearchQuery: () => {},
-    updateItem: async () => {},
-    deleteItem,
-    deleteList: async () => {},
-    reorderItems: async () => {},
-    toggleFavoriteHistory: async () => {},
+      toggleItemPurchased: async () => {},
+      clearPurchased: async () => {},
+      setSortMode: async () => {},
+      setMovePurchasedToBottom: async () => {},
+      updateItem: async () => {},
+      deleteItem,
+      deleteList: async () => {},
+      reorderItems: async () => {},
+      toggleFavoriteHistory: async () => {},
     setActiveList: () => {},
   }))
 
@@ -81,35 +80,23 @@ describe('ListDetailPage quick entry', () => {
     resetAppStore()
   })
 
-  it('keeps the quick entry input hidden until a plus entry is spawned', () => {
-    renderListPage()
-
-    expect(screen.getByRole('button', { name: /add item entry/i })).toBeInTheDocument()
-    expect(screen.queryByPlaceholderText(/add items/i)).not.toBeInTheDocument()
-    expect(screen.queryByRole('textbox', { name: /new item entry/i })).not.toBeInTheDocument()
-  })
-
-  it('does not render a plus icon on the add entry control', () => {
-    renderListPage()
-
-    expect(document.querySelector('svg.lucide-plus')).toBeNull()
-  })
-
-  it('creates a text entry through the plus control and submits it', async () => {
+  it('adds an item from the header input when pressing enter', async () => {
     const user = userEvent.setup()
     const { addItemQuick } = renderListPage()
 
-    await user.click(screen.getByRole('button', { name: /add item entry/i }))
-    const entryInput = screen.getByRole('textbox', { name: /new item entry/i })
-    await user.type(entryInput, 'bananas')
-    await user.click(screen.getByRole('button', { name: /save item/i }))
+    const entryInput = screen.getByPlaceholderText(/add items/i)
+    await user.type(entryInput, 'bananas{enter}')
 
     await waitFor(() => {
-      expect(addItemQuick).toHaveBeenCalledWith(listId, 'bananas', undefined)
+      expect(addItemQuick).toHaveBeenCalledWith(listId, 'bananas')
     })
-    await waitFor(() => {
-      expect(screen.queryByRole('textbox', { name: /new item entry/i })).not.toBeInTheDocument()
-    })
+    expect(entryInput).toHaveValue('')
+  })
+
+  it('does not show the old add entry button', () => {
+    renderListPage()
+
+    expect(screen.queryByRole('button', { name: /add item entry/i })).not.toBeInTheDocument()
   })
 })
 
@@ -134,7 +121,7 @@ describe('ListDetailPage list utilities', () => {
       ],
     })
 
-    const searchInput = screen.getByPlaceholderText(/search items/i)
+    const searchInput = screen.getByPlaceholderText(/add items/i)
     const firstItem = screen.getByText('Milk')
     expect(searchInput).toBeInTheDocument()
     expect(searchInput.compareDocumentPosition(firstItem)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)

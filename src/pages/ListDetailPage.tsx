@@ -1,8 +1,8 @@
 // ABOUTME: Displays a single grocery list with items, quick add, and bulk actions.
 // ABOUTME: Supports search, sorting, manual reordering, editing, and history suggestions.
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ChevronDown, ChevronUp, MoreHorizontal, Sparkles, Tag, X } from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronUp, MoreHorizontal, Sparkles } from 'lucide-react'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Card } from '../components/ui/card'
@@ -20,17 +20,15 @@ import { Label } from '../components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
 import { Textarea } from '../components/ui/textarea'
 import { DEFAULT_CATEGORY_ORDER } from '../domain/categories'
-import { buildHistorySuggestions } from '../domain/history'
 import { sortItems } from '../domain/sort'
-import type { Item, ItemHistoryEntry, QuantityUnit, SortMode } from '../domain/types'
+import type { Item, QuantityUnit, SortMode } from '../domain/types'
 import { useAppStore } from '../state/appStore'
 import { formatRelativeTime } from '../lib/time'
 import { cn } from '../lib/cn'
 
 const UNASSIGNED_CATEGORY_VALUE = 'category-unassigned'
-const AUTO_CATEGORY_VALUE = 'category-auto'
 
-// Component structure: TopBar handles navigation, search, and overflow access; ItemList renders grouped items; AddBar keeps quick entry sticky at the bottom; OverflowSheet gathers secondary actions.
+// Component structure: TopBar handles navigation, adding, and overflow access; ItemList renders grouped items; OverflowSheet gathers secondary actions.
 
 const quantityLabel = (item: Item) => {
   if (item.quantity === undefined) return ''
@@ -227,137 +225,12 @@ function ItemRow({
   )
 }
 
-interface QuickAddProps {
-  categoryOptions: { id: string; name: string }[]
-  onAdd: (input: string, categoryId?: string) => Promise<void>
-  historySource: ItemHistoryEntry[]
-  onToggleFavorite: (id: string) => Promise<void>
-}
-
-function AddBar({ categoryOptions, onAdd, historySource, onToggleFavorite }: QuickAddProps) {
-  const [input, setInput] = useState('')
-  const [categoryId, setCategoryId] = useState(AUTO_CATEGORY_VALUE)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isAdding, setIsAdding] = useState(false)
-  const inputRef = useRef<HTMLInputElement | null>(null)
-  const suggestions = useMemo(
-    () => buildHistorySuggestions(input.trim(), historySource, 4),
-    [historySource, input],
-  )
-
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault()
-    if (!input.trim()) return
-    setIsSubmitting(true)
-    await onAdd(input, categoryId === AUTO_CATEGORY_VALUE ? undefined : categoryId)
-    setInput('')
-    setCategoryId(AUTO_CATEGORY_VALUE)
-    setIsAdding(false)
-    setIsSubmitting(false)
-  }
-
-  useEffect(() => {
-    if (isAdding) {
-      inputRef.current?.focus()
-    }
-  }, [isAdding])
-
-  const applySuggestion = (name: string, suggestedCategory?: string) => {
-    setInput(name)
-    setIsAdding(true)
-    if (suggestedCategory) {
-      setCategoryId(suggestedCategory)
-    } else {
-      setCategoryId(AUTO_CATEGORY_VALUE)
-    }
-  }
-
-  return (
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/95 backdrop-blur">
-      <div className="mx-auto flex max-w-3xl flex-col gap-2 px-4 py-3">
-        {suggestions.length > 0 && (
-          <div className="flex flex-wrap gap-2 text-sm" aria-label="Saved item suggestions">
-            {suggestions.map((entry) => (
-              <div key={entry.id} className="flex items-center gap-1 rounded-full bg-card/80 px-3 py-1 ring-1 ring-border/60">
-                <button
-                  type="button"
-                  onClick={() => applySuggestion(entry.nameCanonical, entry.defaultCategoryId)}
-                  className="flex items-center gap-1"
-                >
-                  <span>{entry.nameCanonical}</span>
-                  {entry.isFavorite && <span aria-hidden>★</span>}
-                </button>
-                <button
-                  type="button"
-                  className="text-xs text-muted-foreground hover:text-foreground"
-                  onClick={() => onToggleFavorite(entry.id)}
-                  aria-label={`Toggle favorite for ${entry.nameCanonical}`}
-                >
-                  {entry.isFavorite ? 'Unstar' : 'Star'}
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-        <div className="flex items-center gap-2">
-          <Select value={categoryId} onValueChange={setCategoryId}>
-            <SelectTrigger className="w-12 justify-center rounded-full border-border" aria-label="Choose category">
-              <Tag className="size-4" aria-hidden />
-              <SelectValue className="sr-only" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={AUTO_CATEGORY_VALUE}>Auto</SelectItem>
-              {categoryOptions.map((category) => (
-                <SelectItem key={category.id} value={category.id}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {!isAdding && (
-            <Button type="button" variant="primary" className="h-11 px-5" onClick={() => setIsAdding(true)}>
-              Add item entry
-            </Button>
-          )}
-        </div>
-        {isAdding && (
-          <form onSubmit={handleSubmit} className="flex items-center gap-2">
-            <Input
-              ref={inputRef}
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              placeholder="Add items (e.g., 2 milk, apples 3)"
-              aria-label="New item entry"
-              autoComplete="off"
-              className="flex-1"
-            />
-            <Button type="submit" disabled={!input.trim() || isSubmitting} className="h-11 px-5">
-              Save item
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              className="h-11 px-3"
-              onClick={() => {
-                setInput('')
-                setIsAdding(false)
-              }}
-              aria-label="Cancel add item"
-            >
-              <X className="size-4" aria-hidden />
-            </Button>
-          </form>
-        )}
-      </div>
-    </div>
-  )
-}
-
 interface TopBarProps {
   name: string
   onBack: () => void
   searchQuery: string
   onSearchChange: (value: string) => void
+  onAdd: (input: string) => Promise<void>
   onOpenMenu: () => void
 }
 
@@ -366,8 +239,24 @@ function TopBar({
   onBack,
   searchQuery,
   onSearchChange,
+  onAdd,
   onOpenMenu,
 }: TopBarProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    const value = searchQuery.trim()
+    if (!value) return
+    setIsSubmitting(true)
+    try {
+      await onAdd(value)
+      onSearchChange('')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <div className="sticky top-4 z-30 -mx-4 bg-background/90 px-4 pb-3 pt-2 backdrop-blur">
       <div className="flex items-center justify-between gap-2">
@@ -388,14 +277,15 @@ function TopBar({
           </Button>
         </div>
       </div>
-      <div className="mt-3">
+      <form className="mt-3" onSubmit={handleSubmit}>
         <Input
           value={searchQuery}
           onChange={(event) => onSearchChange(event.target.value)}
-          placeholder="Search items"
+          placeholder="Add items"
           className="w-full"
+          disabled={isSubmitting}
         />
-      </div>
+      </form>
     </div>
   )
 }
@@ -519,7 +409,6 @@ export function ListDetailPage() {
   const lists = useAppStore((state) => state.lists)
   const items = useAppStore((state) => state.items)
   const categories = useAppStore((state) => state.categories)
-  const itemHistory = useAppStore((state) => state.itemHistory)
   const preferences = useAppStore((state) => state.preferences)
   const addItemQuick = useAppStore((state) => state.addItemQuick)
   const toggleItemPurchased = useAppStore((state) => state.toggleItemPurchased)
@@ -531,7 +420,6 @@ export function ListDetailPage() {
   const deleteItem = useAppStore((state) => state.deleteItem)
   const deleteList = useAppStore((state) => state.deleteList)
   const reorderItems = useAppStore((state) => state.reorderItems)
-  const toggleFavoriteHistory = useAppStore((state) => state.toggleFavoriteHistory)
   const setActiveList = useAppStore((state) => state.setActiveList)
 
   const list = useMemo(() => lists.find((entry) => entry.id === safeId), [lists, safeId])
@@ -636,12 +524,13 @@ export function ListDetailPage() {
   }
 
   return (
-    <div className="relative mx-auto max-w-3xl pb-32 pt-4">
+    <div className="relative mx-auto max-w-3xl pb-16 pt-4">
       <TopBar
         name={list.name}
         onBack={() => navigate('/')}
         searchQuery={searchQuery}
         onSearchChange={(value) => setSearchQuery(id, value)}
+        onAdd={(value) => addItemQuick(id, value)}
         onOpenMenu={() => setIsSheetOpen(true)}
       />
 
@@ -684,7 +573,7 @@ export function ListDetailPage() {
         {filteredItems.length === 0 && (
           <div className="rounded-2xl border border-border/60 bg-card/70 p-6 text-center">
             <p className="font-semibold">No items yet</p>
-            <p className="text-sm text-muted-foreground">Use the add bar below to capture ingredients fast.</p>
+            <p className="text-sm text-muted-foreground">Use the add bar above to capture ingredients fast.</p>
           </div>
         )}
       </div>
@@ -702,13 +591,6 @@ export function ListDetailPage() {
         itemCount={listItems.length}
         purchasedCount={purchasedCount}
         updatedAt={list.updatedAt}
-      />
-
-      <AddBar
-        categoryOptions={listCategoryOptions}
-        onAdd={(input, categoryId) => addItemQuick(id, input, categoryId)}
-        historySource={itemHistory}
-        onToggleFavorite={toggleFavoriteHistory}
       />
     </div>
   )
