@@ -107,7 +107,7 @@ export function ListsPage() {
                     <h2 className="text-lg font-semibold">
                       <Link
                         to={`/list/${list.id}`}
-                        className="text-foreground no-underline transition hover:text-primary focus-visible:underline"
+                        className="text-foreground no-underline transition hover:text-[hsl(var(--color-accent))] focus-visible:underline"
                         onClick={() => setActiveList(list.id)}
                       >
                         {list.name}
