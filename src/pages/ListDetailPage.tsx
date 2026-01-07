@@ -1,26 +1,13 @@
 // ABOUTME: Displays a single grocery list with items, quick add, and bulk actions.
 // ABOUTME: Supports sorting, manual reordering, editing, and list management.
-import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ChevronDown, ChevronUp, MoreHorizontal } from 'lucide-react'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Card } from '../components/ui/card'
 import { Checkbox } from '../components/ui/checkbox'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '../components/ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '../components/ui/dropdown-menu'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../components/ui/dialog'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
@@ -46,11 +33,11 @@ interface EditItemProps {
   item: Item
   categories: { id: string; name: string }[]
   onSave: (updates: Partial<Item>) => void
-  trigger?: ReactNode
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
 
-function EditItemDialog({ item, categories, onSave, trigger }: EditItemProps) {
-  const [open, setOpen] = useState(false)
+function EditItemDialog({ item, categories, onSave, open, onOpenChange }: EditItemProps) {
   const [form, setForm] = useState({
     name: item.nameOriginal,
     quantity: item.quantity?.toString() ?? '',
@@ -68,21 +55,12 @@ function EditItemDialog({ item, categories, onSave, trigger }: EditItemProps) {
       categoryId: item.categoryId ?? UNASSIGNED_CATEGORY_VALUE,
     })
 
+  useEffect(() => {
+    if (open) resetForm()
+  }, [open, item])
+
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        setOpen(next)
-        if (next) resetForm()
-      }}
-    >
-      <DialogTrigger asChild>
-        {trigger ?? (
-          <Button variant="ghost" size="sm">
-            Edit
-          </Button>
-        )}
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit item</DialogTitle>
@@ -145,7 +123,7 @@ function EditItemDialog({ item, categories, onSave, trigger }: EditItemProps) {
             />
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" type="button" onClick={() => setOpen(false)}>
+            <Button variant="ghost" type="button" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button
@@ -159,7 +137,7 @@ function EditItemDialog({ item, categories, onSave, trigger }: EditItemProps) {
                   notes: form.notes,
                   categoryId: form.categoryId === UNASSIGNED_CATEGORY_VALUE ? undefined : form.categoryId,
                 })
-                setOpen(false)
+                onOpenChange(false)
               }}
             >
               Save changes
@@ -176,11 +154,10 @@ interface ItemRowProps {
   categoryName: string
   onToggle: () => void
   onDelete: () => void
-  onEdit: (updates: Partial<Item>) => void
+  onOpenEdit: () => void
   onMoveUp?: () => void
   onMoveDown?: () => void
   manualMode: boolean
-  categoryOptions: { id: string; name: string }[]
   showCategoryBadge: boolean
 }
 
@@ -189,11 +166,10 @@ function ItemRow({
   categoryName,
   onToggle,
   onDelete,
-  onEdit,
+  onOpenEdit,
   onMoveUp,
   onMoveDown,
   manualMode,
-  categoryOptions,
   showCategoryBadge,
 }: ItemRowProps) {
   return (
@@ -261,44 +237,30 @@ function ItemRow({
             </Button>
           </div>
         )}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-9 w-9 p-0"
-              onClick={(event) => event.stopPropagation()}
-              onKeyDown={(event) => event.stopPropagation()}
-              aria-label="Item actions"
-            >
-              <MoreHorizontal className="size-4" aria-hidden />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <EditItemDialog
-              item={item}
-              categories={categoryOptions}
-              onSave={onEdit}
-              trigger={
-                <DropdownMenuItem
-                  onSelect={(event) => {
-                    event.preventDefault()
-                  }}
-                >
-                  Edit
-                </DropdownMenuItem>
-              }
-            />
-            <DropdownMenuItem
-              onSelect={(event) => {
-                event.preventDefault()
-                onDelete()
-              }}
-            >
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(event) => {
+              event.stopPropagation()
+              onOpenEdit()
+            }}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
+            Edit
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(event) => {
+              event.stopPropagation()
+              onDelete()
+            }}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
+            Delete
+          </Button>
+        </div>
       </div>
     </div>
   )
@@ -497,6 +459,7 @@ export function ListDetailPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [quickAddValue, setQuickAddValue] = useState('')
   const [showPurchased, setShowPurchased] = useState(true)
+  const [editingItemId, setEditingItemId] = useState<string | null>(null)
   const addInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -579,6 +542,17 @@ export function ListDetailPage() {
     [categoryOrder, categories],
   )
 
+  const editingItem = useMemo(
+    () => (editingItemId ? items.find((item) => item.id === editingItemId) ?? null : null),
+    [editingItemId, items],
+  )
+
+  useEffect(() => {
+    if (editingItemId && !editingItem) {
+      setEditingItemId(null)
+    }
+  }, [editingItem, editingItemId])
+
   const order = useMemo(
     () => (sortMode === 'category' ? categoryOrder : ['all']),
     [categoryOrder, sortMode],
@@ -649,11 +623,10 @@ export function ListDetailPage() {
                 categoryName={categoryMap.get(item.categoryId ?? '') ?? 'Other'}
                 onToggle={() => toggleItemPurchased(item.id)}
                 onDelete={() => deleteItem(item.id)}
-                onEdit={(updates) => updateItem(item.id, updates)}
+                onOpenEdit={() => setEditingItemId(item.id)}
                 onMoveUp={list.sortMode === 'manual' ? () => handleReorderItem(item.id, -1) : undefined}
                 onMoveDown={list.sortMode === 'manual' ? () => handleReorderItem(item.id, 1) : undefined}
                 manualMode={list.sortMode === 'manual'}
-                categoryOptions={listCategoryOptions}
                 showCategoryBadge={showCategoryBadge}
               />
             ))}
@@ -719,6 +692,17 @@ export function ListDetailPage() {
         purchasedCount={purchasedCount}
         updatedAt={list.updatedAt}
       />
+      {editingItem && (
+        <EditItemDialog
+          item={editingItem}
+          categories={listCategoryOptions}
+          onSave={(updates) => updateItem(editingItem.id, updates)}
+          open={Boolean(editingItemId)}
+          onOpenChange={(open) => {
+            if (!open) setEditingItemId(null)
+          }}
+        />
+      )}
     </div>
   )
 }
