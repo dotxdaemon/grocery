@@ -9,11 +9,19 @@ describe('parseQuickAddInput', () => {
     expect(result).toEqual({ nameCanonical: '', nameOriginal: '' })
   })
 
-  it('strips quantity and unit from the visible name portion', () => {
+  it('keeps numeric text as part of the name', () => {
+    const result = parseQuickAddInput('1/4 tbsp of cardamom')
+    expect(result.nameCanonical).toBe('1/4 tbsp of cardamom')
+    expect(result.nameOriginal).toBe('1/4 tbsp of cardamom')
+    expect(result.quantity).toBeUndefined()
+    expect(result.unit).toBeUndefined()
+  })
+
+  it('treats leading numbers as part of the name', () => {
     const result = parseQuickAddInput('2 lb milk')
-    expect(result.nameCanonical).toBe('milk')
-    expect(result.nameOriginal).toBe('milk')
-    expect(result.quantity).toBe(2)
-    expect(result.unit).toBe('lb')
+    expect(result.nameCanonical).toBe('2 lb milk')
+    expect(result.nameOriginal).toBe('2 lb milk')
+    expect(result.quantity).toBeUndefined()
+    expect(result.unit).toBeUndefined()
   })
 })
