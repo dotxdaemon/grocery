@@ -50,4 +50,20 @@ describe('Berry Mint (Mint Primary) theme', () => {
     render(<App />)
     expect(document.body.classList.contains(themeClass)).toBe(true)
   })
+
+  it('applies the dark theme class when selected', () => {
+    useAppStore.setState((state) => ({
+      ...state,
+      preferences: { ...state.preferences, themeMode: 'dark' },
+    }))
+    render(<App />)
+    expect(document.body.classList.contains('theme-dark')).toBe(true)
+  })
+
+  it('uses the Inter typeface for the global font stack', () => {
+    const cssPath = path.resolve(__dirname, 'index.css')
+    const css = fs.readFileSync(cssPath, 'utf-8')
+    expect(css).toContain("family=Inter:wght@400;500;600")
+    expect(css).toContain("font-family: 'Inter'")
+  })
 })

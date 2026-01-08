@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
 import { Card } from '../components/ui/card'
+import { Checkbox } from '../components/ui/checkbox'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { useAppStore } from '../state/appStore'
@@ -15,11 +16,13 @@ export function SettingsPage() {
   const categories = useAppStore((state) => state.categories)
   const lists = useAppStore((state) => state.lists)
   const preferences = useAppStore((state) => state.preferences)
+  const themeMode = useAppStore((state) => state.preferences.themeMode)
   const itemHistory = useAppStore((state) => state.itemHistory)
   const renameCategory = useAppStore((state) => state.renameCategory)
   const reorderCategories = useAppStore((state) => state.reorderCategories)
   const resetCategories = useAppStore((state) => state.resetCategories)
   const toggleFavoriteHistory = useAppStore((state) => state.toggleFavoriteHistory)
+  const setThemeMode = useAppStore((state) => state.setThemeMode)
   const addItemQuick = useAppStore((state) => state.addItemQuick)
   const exportData = useAppStore((state) => state.exportData)
   const importData = useAppStore((state) => state.importData)
@@ -85,6 +88,23 @@ export function SettingsPage() {
         <p className="text-sm text-muted-foreground">Manage categories, saved items, and backups.</p>
         <p className="text-xs text-muted-foreground">Storage mode: {storageMode === 'idb' ? 'IndexedDB' : 'Fallback (localStorage)'}</p>
       </div>
+
+      <Card className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Appearance</h2>
+            <p className="text-sm text-muted-foreground">Switch between light and dark themes.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Checkbox
+              id="dark-mode"
+              checked={themeMode === 'dark'}
+              onCheckedChange={(checked) => setThemeMode(checked === true ? 'dark' : 'light')}
+            />
+            <Label htmlFor="dark-mode">Dark Mode</Label>
+          </div>
+        </div>
+      </Card>
 
       <Card className="space-y-3">
         <div className="flex items-center justify-between">

@@ -28,6 +28,7 @@ interface Preferences {
   activeListId?: string
   movePurchasedToBottom: Record<string, boolean>
   searchQueryByList: Record<string, string>
+  themeMode: 'light' | 'dark'
 }
 
 interface UndoState {
@@ -50,6 +51,7 @@ export interface AppState {
   setActiveList: (id?: string) => void
   setSearchQuery: (listId: string, query: string) => void
   setMovePurchasedToBottom: (listId: string, value: boolean) => void
+  setThemeMode: (mode: Preferences['themeMode']) => void
   createList: (name: string) => Promise<void>
   renameList: (id: string, name: string) => Promise<void>
   reorderLists: (orderedIds: string[]) => Promise<void>
@@ -123,7 +125,7 @@ export const useAppStore = create<AppState>()(
       categories: DEFAULT_CATEGORIES,
       itemHistory: [],
       storeProfiles: [],
-      preferences: { movePurchasedToBottom: {}, searchQueryByList: {} },
+      preferences: { movePurchasedToBottom: {}, searchQueryByList: {}, themeMode: 'light' },
       async init() {
         try {
           const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000))
@@ -188,6 +190,11 @@ export const useAppStore = create<AppState>()(
             ...state.preferences,
             movePurchasedToBottom: { ...state.preferences.movePurchasedToBottom, [listId]: value },
           },
+        }))
+      },
+      setThemeMode(mode) {
+        set((state) => ({
+          preferences: { ...state.preferences, themeMode: mode },
         }))
       },
       async createList(name) {
