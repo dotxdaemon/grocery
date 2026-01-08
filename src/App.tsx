@@ -116,12 +116,19 @@ function AppShell() {
 }
 
 export default function App() {
+  const themeMode = useAppStore((state) => state.preferences.themeMode ?? 'light')
+
   useEffect(() => {
     document.body.classList.add('theme-berry-mint-mint-primary')
     return () => {
       document.body.classList.remove('theme-berry-mint-mint-primary')
+      document.body.classList.remove('theme-dark')
     }
   }, [])
+
+  useEffect(() => {
+    document.body.classList.toggle('theme-dark', themeMode === 'dark')
+  }, [themeMode])
 
   return (
     <Router basename="/grocery">

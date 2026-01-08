@@ -12,7 +12,7 @@ export const resetAppStore = () => {
     categories: DEFAULT_CATEGORIES,
     itemHistory: [],
     storeProfiles: [],
-    preferences: { movePurchasedToBottom: {}, searchQueryByList: {} },
+    preferences: { movePurchasedToBottom: {}, searchQueryByList: {}, themeMode: 'light' },
     lastUndo: undefined,
     error: undefined,
   })
