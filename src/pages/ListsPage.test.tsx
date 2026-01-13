@@ -89,4 +89,42 @@ describe('ListsPage', () => {
     expect(await screen.findByText('Detail for list-1')).toBeInTheDocument()
     expect(useAppStore.getState().preferences.activeListId).toBe('list-1')
   })
+
+  it('lets shoppers open a list by clicking the card', async () => {
+    const now = Date.now()
+    useAppStore.setState((state) => ({
+      status: 'ready',
+      lists: [
+        {
+          id: 'list-1',
+          name: 'Weekend',
+          createdAt: now,
+          updatedAt: now,
+          sortMode: 'category',
+          categoryOrder: DEFAULT_CATEGORY_ORDER,
+        },
+      ],
+      items: [],
+      preferences: { ...state.preferences, activeListId: undefined },
+    }))
+
+    function DetailProbe() {
+      const { id } = useParams()
+      return <p>Detail for {id}</p>
+    }
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route path="/" element={<ListsPage />} />
+          <Route path="/list/:id" element={<DetailProbe />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    await userEvent.click(await screen.findByTestId('list-card-list-1'))
+
+    expect(await screen.findByText('Detail for list-1')).toBeInTheDocument()
+    expect(useAppStore.getState().preferences.activeListId).toBe('list-1')
+  })
 })

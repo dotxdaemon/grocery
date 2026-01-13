@@ -1,7 +1,7 @@
 // ABOUTME: Renders the overview of grocery lists with create, rename, reorder, and delete actions.
 // ABOUTME: Serves as the landing page for managing multiple shopping lists.
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/button'
 import { Card } from '../components/ui/card'
 import { Input } from '../components/ui/input'
@@ -19,6 +19,7 @@ export function ListsPage() {
   const [newListName, setNewListName] = useState('')
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
+  const navigate = useNavigate()
 
   const counts = useMemo(() => {
     const map: Record<string, { total: number; purchased: number }> = {}
@@ -62,6 +63,11 @@ export function ListsPage() {
     await deleteList(id)
   }
 
+  const handleOpenList = (id: string) => {
+    setActiveList(id)
+    navigate(`/list/${id}`)
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -88,7 +94,17 @@ export function ListsPage() {
         {lists.map((list) => {
           const count = counts[list.id] ?? { total: 0, purchased: 0 }
           return (
-            <Card key={list.id} className="flex flex-col gap-3">
+            <Card
+              key={list.id}
+              className="flex flex-col gap-3"
+              data-testid={`list-card-${list.id}`}
+              onClick={(event) => {
+                if (renamingId === list.id) return
+                const target = event.target as HTMLElement
+                if (target.closest('button, a, input, textarea, select')) return
+                handleOpenList(list.id)
+              }}
+            >
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1">
                   {renamingId === list.id ? (
