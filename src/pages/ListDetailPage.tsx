@@ -46,19 +46,6 @@ function EditItemDialog({ item, categories, onSave, open, onOpenChange }: EditIt
     categoryId: item.categoryId ?? UNASSIGNED_CATEGORY_VALUE,
   })
 
-  const resetForm = () =>
-    setForm({
-      name: item.nameOriginal,
-      quantity: item.quantity?.toString() ?? '',
-      unit: item.unit ?? '',
-      notes: item.notes ?? '',
-      categoryId: item.categoryId ?? UNASSIGNED_CATEGORY_VALUE,
-    })
-
-  useEffect(() => {
-    if (open) resetForm()
-  }, [open, item])
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
