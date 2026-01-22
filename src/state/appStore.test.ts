@@ -64,12 +64,23 @@ describe('app store', () => {
     await store.createList('Batch')
     const listId = useAppStore.getState().lists[0].id
 
-    await store.addItemQuick(listId, 'apples, bananas; carrots\nmilk')
+    await store.addItemQuick(listId, 'apples, bananas; carrots')
 
     const items = useAppStore.getState().items
-    expect(items).toHaveLength(4)
+    expect(items).toHaveLength(3)
     expect(useAppStore.getState().lastUndo?.label).toBe('Added item')
     expect(useAppStore.getState().lastUndo?.snapshot.items).toHaveLength(0)
+  })
+
+  it('adds each non-empty line as an item for multi-line quick add', async () => {
+    const store = useAppStore.getState()
+    await store.createList('Paste')
+    const listId = useAppStore.getState().lists[0].id
+
+    await store.addItemQuick(listId, '1 cup sugar\n2 eggs\n1 cup flour')
+
+    const items = useAppStore.getState().items.filter((item) => item.listId === listId)
+    expect(items).toHaveLength(3)
   })
 
   it('clears undo metadata when requested', async () => {

@@ -9,6 +9,14 @@ export interface ParsedQuickAdd {
   unit?: QuantityUnit
 }
 
+export function splitQuickAddInput(raw: string): string[] {
+  return raw
+    .split(/\r?\n+/)
+    .map((line) => line.trim())
+    .map((line) => line.replace(/^([-*•]|\d+[.)])\s+/, '').trim())
+    .filter(Boolean)
+}
+
 export function parseQuickAddInput(input: string): ParsedQuickAdd {
   const normalized = input.trim()
 

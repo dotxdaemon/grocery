@@ -5,7 +5,7 @@ import { createJSONStorage, persist } from 'zustand/middleware'
 import { DEFAULT_CATEGORIES, DEFAULT_CATEGORY_ORDER } from '../domain/categories'
 import { buildHistorySuggestions, inferCategoryFromHistory } from '../domain/history'
 import { validateImportedData } from '../domain/importExport'
-import { parseQuickAddInput } from '../domain/parse'
+import { parseQuickAddInput, splitQuickAddInput } from '../domain/parse'
 import { sortItems } from '../domain/sort'
 import type {
   Category,
@@ -255,10 +255,13 @@ export const useAppStore = create<AppState>()(
       },
       async addItemQuick(listId, input, categoryId) {
         const state = get()
-        const chunks = input
-          .split(/[,\n;]+/)
-          .map((chunk) => chunk.trim())
-          .filter(Boolean)
+        const hasNewlines = /[\r\n]/.test(input)
+        const chunks = hasNewlines
+          ? splitQuickAddInput(input)
+          : input
+              .split(/[,\n;]+/)
+              .map((chunk) => chunk.trim())
+              .filter(Boolean)
         if (!chunks.length) return
 
         const snapshot = snapshotFromState(state)
@@ -271,17 +274,26 @@ export const useAppStore = create<AppState>()(
 
         for (const chunk of chunks) {
           const parsed = parseQuickAddInput(chunk)
-          if (!parsed.nameCanonical) continue
+          const resolved =
+            hasNewlines && !parsed.nameCanonical
+              ? {
+                  nameCanonical: chunk.toLowerCase(),
+                  nameOriginal: chunk,
+                  quantity: undefined,
+                  unit: undefined,
+                }
+              : parsed
+          if (!resolved.nameCanonical) continue
 
           const inferredCategory =
-            categoryId ?? inferCategoryFromHistory(parsed.nameCanonical, itemHistory)
+            categoryId ?? inferCategoryFromHistory(resolved.nameCanonical, itemHistory)
           const item: Item = {
             id: crypto.randomUUID(),
             listId,
-            name: parsed.nameCanonical,
-            nameOriginal: parsed.nameOriginal,
-            quantity: parsed.quantity,
-            unit: parsed.unit,
+            name: resolved.nameCanonical,
+            nameOriginal: resolved.nameOriginal,
+            quantity: resolved.quantity,
+            unit: resolved.unit,
             categoryId: inferredCategory,
             notes: '',
             isPurchased: false,
@@ -293,7 +305,7 @@ export const useAppStore = create<AppState>()(
           newItems.push(item)
 
           const existingHistory = itemHistory.find(
-            (entry) => entry.nameCanonical === parsed.nameCanonical,
+            (entry) => entry.nameCanonical === resolved.nameCanonical,
           )
           if (existingHistory) {
             itemHistory = itemHistory.map((entry) =>
@@ -311,7 +323,7 @@ export const useAppStore = create<AppState>()(
               ...itemHistory,
               {
                 id: crypto.randomUUID(),
-                nameCanonical: parsed.nameCanonical,
+                nameCanonical: resolved.nameCanonical,
                 defaultCategoryId: inferredCategory,
                 lastUsedAt: now,
                 timesUsed: 1,
