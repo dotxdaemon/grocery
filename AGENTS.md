@@ -171,4 +171,4 @@ You must follow this debugging framework for any technical issue:
 - Track patterns in user feedback to improve collaboration over time.
 - When you notice something that should be fixed but is unrelated to your current task, document it in your notes rather than fixing it immediately.
 
-Do not use binary files. if there are any existing uncommitted or untracked changes in the repo before you begin, ignore and continue.
+Do not use binary files. if there are any existing uncommitted or untracked changes in the repo before you begin, ignore and continue..
