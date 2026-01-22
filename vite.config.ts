@@ -1,13 +1,11 @@
 // ABOUTME: Configures Vite for the grocery PWA build and dev tooling.
 // ABOUTME: Adds React, PWA, aliasing, and Vitest settings for the project.
-
 import path from 'node:path'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 import { VitePWA } from 'vite-plugin-pwa'
-
 export default defineConfig({
-  base: '/grocery/',
+  base: '/',
   plugins: [
     react(),
     VitePWA({
