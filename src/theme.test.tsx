@@ -3,7 +3,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { render } from '@testing-library/react'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { resetAppStore } from './test/storeHelpers'
 import { useAppStore } from './state/appStore'
@@ -12,6 +12,7 @@ const themeClass = 'theme-berry-mint-mint-primary'
 
 describe('Berry Mint (Mint Primary) theme', () => {
   beforeEach(() => {
+    vi.stubEnv('BASE_URL', '/grocery/')
     window.history.replaceState({}, '', '/grocery')
     resetAppStore()
     useAppStore.setState((state) => ({
@@ -19,6 +20,11 @@ describe('Berry Mint (Mint Primary) theme', () => {
       init: async () => {},
     }))
     document.body.className = ''
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllEnvs()
   })
 
   it('defines the mint-led palette tokens', () => {
