@@ -11,4 +11,11 @@ describe('GitHub Pages deploy workflow', () => {
 
     expect(hasTimeout).toBe(true)
   })
+
+  it('sets VITE_BASE_URL for the build step', () => {
+    const workflow = readFileSync(resolve(process.cwd(), '.github/workflows/deploy.yml'), 'utf8')
+    const hasBaseUrl = /- name:\s*Build[\s\S]*?env:[\s\S]*?VITE_BASE_URL:\s*['"]?\/grocery\/['"]?/m.test(workflow)
+
+    expect(hasBaseUrl).toBe(true)
+  })
 })

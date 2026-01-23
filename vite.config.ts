@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig({
-  base: process.env.VERCEL ? '/' : '/grocery/',
+  base: process.env.VITE_BASE_URL ?? '/',
   plugins: [
     react(),
     VitePWA({
