@@ -117,6 +117,8 @@ function AppShell() {
 
 export default function App() {
   const themeMode = useAppStore((state) => state.preferences.themeMode ?? 'light')
+  const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '')
+  const basename = baseUrl === '' ? '/' : baseUrl
 
   useEffect(() => {
     document.body.classList.add('theme-berry-mint-mint-primary')
@@ -131,7 +133,7 @@ export default function App() {
   }, [themeMode])
 
   return (
-    <Router basename="/grocery">
+    <Router basename={basename}>
       <AppShell />
     </Router>
   )
