@@ -11,7 +11,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({ className, ...p
       ref={ref}
       className={cn(
         'flex h-10 w-full rounded-md border border-[var(--divider)] bg-[var(--surface)] px-3 py-2 text-base',
-        'placeholder:text-[var(--muted)] ring-offset-[hsl(var(--color-background))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--color-ring) / 0.35)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+        'focus-visible:ring-[hsl(var(--color-ring) / 0.35)] ring-offset-[hsl(var(--color-background))] placeholder:text-[var(--muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}
       {...props}
