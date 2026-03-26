@@ -11,4 +11,13 @@ describe('vite config', () => {
 
     expect(usesBaseEnv).toBe(true)
   })
+
+  it('allows the offline OCR assets through the Workbox size limit', () => {
+    const configSource = readFileSync(resolve(process.cwd(), 'vite.config.ts'), 'utf8')
+    const allowsLargeOfflineAssets = /maximumFileSizeToCacheInBytes:\s*6\s*\*\s*1024\s*\*\s*1024/.test(
+      configSource,
+    )
+
+    expect(allowsLargeOfflineAssets).toBe(true)
+  })
 })
