@@ -9,6 +9,13 @@ import { resetAppStore } from '../test/storeHelpers'
 import { useAppStore } from '../state/appStore'
 
 const listId = 'list-1'
+const { collectItemsFromScreenshot } = vi.hoisted(() => ({
+  collectItemsFromScreenshot: vi.fn(),
+}))
+
+vi.mock('../lib/screenshotItems', () => ({
+  collectItemsFromScreenshot,
+}))
 
 const renderListPage = () =>
   render(
@@ -22,6 +29,7 @@ const renderListPage = () =>
 describe('ListDetailPage header add bar', () => {
   beforeEach(() => {
     resetAppStore()
+    collectItemsFromScreenshot.mockReset()
     useAppStore.setState((state) => ({
       ...state,
       lists: [
@@ -87,6 +95,22 @@ describe('ListDetailPage header add bar', () => {
     await waitFor(() => expect(addItemQuick).toHaveBeenCalledWith(listId, 'eggs', undefined))
     expect(addInput).toHaveFocus()
     expect(addInput).toHaveValue('')
+  })
+
+  it('uploads a screenshot and adds detected items directly to the list', async () => {
+    const addItemQuick = vi.fn().mockResolvedValue(undefined)
+    collectItemsFromScreenshot.mockResolvedValue(['2 milk', 'bread'])
+    useAppStore.setState((state) => ({ ...state, addItemQuick }))
+
+    renderListPage()
+    const user = userEvent.setup()
+    const fileInput = screen.getByLabelText(/upload screenshot file/i)
+    const screenshot = new File(['image'], 'ingredients.png', { type: 'image/png' })
+
+    await user.upload(fileInput, screenshot)
+
+    await waitFor(() => expect(collectItemsFromScreenshot).toHaveBeenCalledWith(screenshot))
+    await waitFor(() => expect(addItemQuick).toHaveBeenCalledWith(listId, '2 milk\nbread', undefined))
   })
 })
 

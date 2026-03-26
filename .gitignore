@@ -14,6 +14,7 @@ dev-dist
 test-results
 .cache
 *.local
+public/ocr
 
 # Editor directories and files
 .vscode/*

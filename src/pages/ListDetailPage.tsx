@@ -18,6 +18,7 @@ import type { Item, QuantityUnit, SortMode } from '../domain/types'
 import { useAppStore } from '../state/appStore'
 import { formatRelativeTime } from '../lib/time'
 import { cn } from '../lib/cn'
+import { collectItemsFromScreenshot } from '../lib/screenshotItems'
 
 const UNASSIGNED_CATEGORY_VALUE = 'category-unassigned'
 
@@ -260,7 +261,11 @@ interface TopBarProps {
   quickAddValue: string
   onQuickAddChange: (value: string) => void
   onSubmit: () => void
+  onSelectScreenshot: (file: File | null) => Promise<void>
+  isUploadingScreenshot: boolean
+  screenshotError?: string
   inputRef: RefObject<HTMLInputElement | null>
+  screenshotInputRef: RefObject<HTMLInputElement | null>
 }
 
 function TopBar({
@@ -270,7 +275,11 @@ function TopBar({
   quickAddValue,
   onQuickAddChange,
   onSubmit,
+  onSelectScreenshot,
+  isUploadingScreenshot,
+  screenshotError,
   inputRef,
+  screenshotInputRef,
 }: TopBarProps) {
   return (
     <div className="sticky top-4 z-30 -mx-4 bg-background/90 px-4 pb-3 pt-2 backdrop-blur">
@@ -303,10 +312,33 @@ function TopBar({
           className="w-full"
           aria-label="Add an item"
         />
+        <Input
+          ref={screenshotInputRef}
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          aria-label="Upload screenshot file"
+          onChange={(event) => {
+            const file = event.target.files?.[0] ?? null
+            void onSelectScreenshot(file).finally(() => {
+              event.target.value = ''
+            })
+          }}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          className="shrink-0"
+          onClick={() => screenshotInputRef.current?.click()}
+          disabled={isUploadingScreenshot}
+        >
+          {isUploadingScreenshot ? 'Reading...' : 'Upload'}
+        </Button>
         <Button type="submit" className="shrink-0">
           Add
         </Button>
       </form>
+      {screenshotError && <p className="mt-2 text-sm text-destructive">{screenshotError}</p>}
     </div>
   )
 }
@@ -447,7 +479,10 @@ export function ListDetailPage() {
   const [quickAddValue, setQuickAddValue] = useState('')
   const [showPurchased, setShowPurchased] = useState(true)
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
+  const [isUploadingScreenshot, setIsUploadingScreenshot] = useState(false)
+  const [screenshotError, setScreenshotError] = useState<string>()
   const addInputRef = useRef<HTMLInputElement>(null)
+  const screenshotInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (safeId) setActiveList(safeId)
@@ -570,6 +605,23 @@ export function ListDetailPage() {
     }
   }
 
+  const handleScreenshotUpload = async (file: File | null) => {
+    if (!file) return
+
+    setIsUploadingScreenshot(true)
+    setScreenshotError(undefined)
+
+    try {
+      const lines = await collectItemsFromScreenshot(file)
+      await addItemQuick(id, lines.join('\n'), undefined)
+      addInputRef.current?.focus()
+    } catch (error) {
+      setScreenshotError(error instanceof Error ? error.message : 'Could not read screenshot.')
+    } finally {
+      setIsUploadingScreenshot(false)
+    }
+  }
+
   const handleClearPurchased = async () => {
     await clearPurchased(id)
     setIsSheetOpen(false)
@@ -630,7 +682,11 @@ export function ListDetailPage() {
         quickAddValue={quickAddValue}
         onQuickAddChange={setQuickAddValue}
         onSubmit={() => void handleAddItems(quickAddValue)}
+        onSelectScreenshot={handleScreenshotUpload}
+        isUploadingScreenshot={isUploadingScreenshot}
+        screenshotError={screenshotError}
         inputRef={addInputRef}
+        screenshotInputRef={screenshotInputRef}
       />
 
       <div className="mt-3 space-y-5">
