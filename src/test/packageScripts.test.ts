@@ -11,4 +11,13 @@ describe('package scripts', () => {
 
     expect(hasPrebuildOcrPrep).toBe(true)
   })
+
+  it('tracks the OCR dependencies in the pnpm lockfile for CI installs', () => {
+    const pnpmLock = readFileSync(resolve(process.cwd(), 'pnpm-lock.yaml'), 'utf8')
+    const hasTesseractJs = /tesseract\.js:\s*\n\s+specifier:\s*\^7\.0\.0/.test(pnpmLock)
+    const hasEnglishData = /'@tesseract\.js-data\/eng':\s*\n\s+specifier:\s*\^1\.0\.0/.test(pnpmLock)
+
+    expect(hasTesseractJs).toBe(true)
+    expect(hasEnglishData).toBe(true)
+  })
 })

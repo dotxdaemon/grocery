@@ -26,3 +26,4 @@ public/ocr
 *.njsproj
 *.sln
 *.sw?
+.vercel
