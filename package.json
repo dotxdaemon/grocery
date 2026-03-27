@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/prepare-tesseract-assets.mjs",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "postinstall": "node scripts/prepare-tesseract-assets.mjs",
