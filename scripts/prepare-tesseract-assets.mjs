@@ -1,6 +1,7 @@
 // ABOUTME: Copies the OCR runtime assets into public so screenshot parsing stays offline.
 // ABOUTME: Keeps generated OCR files out of git while making them available to the app shell.
-import { cpSync, existsSync, mkdirSync, rmSync } from 'node:fs'
+import { cpSync, mkdirSync, rmSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -8,6 +9,7 @@ const scriptPath = fileURLToPath(import.meta.url)
 const scriptDirectory = path.dirname(scriptPath)
 const projectRoot = path.resolve(scriptDirectory, '..')
 const publicOcrDirectory = path.join(projectRoot, 'public', 'ocr')
+const projectRequire = createRequire(import.meta.url)
 
 const copyFile = (sourcePath, targetPath) => {
   mkdirSync(path.dirname(targetPath), { recursive: true })
@@ -20,17 +22,30 @@ const copyDirectoryFiles = (sourceDirectory, targetDirectory, fileNames) => {
   })
 }
 
-const requirePath = (...parts) => path.join(projectRoot, 'node_modules', ...parts)
+const resolveProjectPath = (specifier) => {
+  try {
+    return projectRequire.resolve(specifier)
+  } catch {
+    return null
+  }
+}
 
-if (!existsSync(requirePath('tesseract.js', 'dist', 'worker.min.js'))) {
+const workerPath = resolveProjectPath('tesseract.js/dist/worker.min.js')
+
+if (!workerPath) {
   process.exit(0)
 }
 
+const tesseractPackagePath = projectRequire.resolve('tesseract.js/package.json')
+const tesseractRequire = createRequire(tesseractPackagePath)
+const coreDirectory = path.dirname(tesseractRequire.resolve('tesseract.js-core/tesseract-core.wasm.js'))
+const englishDataPath = projectRequire.resolve('@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz')
+
 rmSync(publicOcrDirectory, { recursive: true, force: true })
 
-copyFile(requirePath('tesseract.js', 'dist', 'worker.min.js'), path.join(publicOcrDirectory, 'worker.min.js'))
+copyFile(workerPath, path.join(publicOcrDirectory, 'worker.min.js'))
 
-copyDirectoryFiles(requirePath('tesseract.js-core'), path.join(publicOcrDirectory, 'core'), [
+copyDirectoryFiles(coreDirectory, path.join(publicOcrDirectory, 'core'), [
   'tesseract-core.wasm.js',
   'tesseract-core.wasm',
   'tesseract-core-relaxedsimd.wasm.js',
@@ -45,7 +60,4 @@ copyDirectoryFiles(requirePath('tesseract.js-core'), path.join(publicOcrDirector
   'tesseract-core-relaxedsimd-lstm.wasm',
 ])
 
-copyFile(
-  requirePath('@tesseract.js-data', 'eng', '4.0.0_best_int', 'eng.traineddata.gz'),
-  path.join(publicOcrDirectory, 'lang', 'eng.traineddata.gz'),
-)
+copyFile(englishDataPath, path.join(publicOcrDirectory, 'lang', 'eng.traineddata.gz'))

@@ -5,6 +5,15 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 describe('package scripts', () => {
+  it('resolves OCR package files without hardcoding a flat node_modules layout', () => {
+    const prepareScript = readFileSync(resolve(process.cwd(), 'scripts/prepare-tesseract-assets.mjs'), 'utf8')
+    const usesPackageResolution = /createRequire/.test(prepareScript)
+    const hardcodesCorePackagePath = /node_modules['"`],\s*['"`]tesseract\.js-core/.test(prepareScript)
+
+    expect(usesPackageResolution).toBe(true)
+    expect(hardcodesCorePackagePath).toBe(false)
+  })
+
   it('runs OCR asset preparation before build', () => {
     const packageJson = readFileSync(resolve(process.cwd(), 'package.json'), 'utf8')
     const hasPrebuildOcrPrep = /"prebuild"\s*:\s*"node scripts\/prepare-tesseract-assets\.mjs"/.test(packageJson)
