@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900">
+  <rect width="1200" height="900" fill="#ffffff" />
+  <text x="120" y="180" font-family="Helvetica, Arial, sans-serif" font-size="68" fill="#111111">Shopping List</text>
+  <text x="120" y="320" font-family="Helvetica, Arial, sans-serif" font-size="62" fill="#111111">2 milk</text>
+  <text x="120" y="430" font-family="Helvetica, Arial, sans-serif" font-size="62" fill="#111111">bread</text>
+  <text x="120" y="540" font-family="Helvetica, Arial, sans-serif" font-size="62" fill="#111111">eggs</text>
+</svg>
