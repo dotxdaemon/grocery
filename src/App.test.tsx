@@ -32,7 +32,7 @@ describe('App theme', () => {
   it('renders the neon-inspired branding without the retired reference', async () => {
     window.history.replaceState({}, '', '/')
     await renderApp()
-    expect(screen.getByText(/grocery list/i)).toBeInTheDocument()
+    expect(screen.getByText(/grocery/i)).toBeInTheDocument()
     expect(screen.queryByText(/everyday grocery glow/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/night market errands/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/generic romance/i)).not.toBeInTheDocument()
@@ -63,13 +63,13 @@ describe('App theme', () => {
     setBaseUrl('/')
     window.history.replaceState({}, '', '/')
     await renderApp()
-    expect(screen.getByText(/grocery list/i)).toBeInTheDocument()
+    expect(screen.getByText(/grocery/i)).toBeInTheDocument()
   })
 
   it('renders routes when BASE_URL targets the repository subpath', async () => {
     setBaseUrl('/grocery/')
     window.history.replaceState({}, '', '/grocery')
     await renderApp()
-    expect(screen.getByText(/grocery list/i)).toBeInTheDocument()
+    expect(screen.getByText(/grocery/i)).toBeInTheDocument()
   })
 })

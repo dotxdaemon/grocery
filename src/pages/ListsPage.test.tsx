@@ -48,7 +48,7 @@ describe('ListsPage', () => {
       </MemoryRouter>,
     )
 
-    expect(screen.getByRole('heading', { name: /your lists/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /^lists$/i })).toBeInTheDocument()
     expect(screen.getByText('Weekend')).toBeInTheDocument()
   })
 

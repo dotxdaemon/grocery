@@ -13,14 +13,14 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 }
 
 const focusClasses =
-  'focus-visible:ring-2 focus-visible:ring-[hsl(var(--color-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--color-background))]'
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--prism-1))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--color-background))]'
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: `bg-[var(--primary)] text-[var(--on-primary)] hover:bg-[var(--primary-hover)] ${focusClasses}`,
-  secondary: `border border-[var(--divider)] bg-[var(--surface2)] text-[var(--text)] hover:bg-[var(--surface)] ${focusClasses}`,
-  outline: `border border-[var(--divider)] bg-transparent text-[var(--text)] hover:bg-[var(--surface2)] ${focusClasses}`,
+  primary: `bg-[var(--primary)] text-[var(--on-primary)] shadow-sm hover:bg-[var(--primary-hover)] hover:shadow-[0_8px_24px_hsl(var(--prism-1)/0.25)] ${focusClasses}`,
+  secondary: `border border-[var(--divider)] bg-[var(--surface2)] text-[var(--text)] hover:border-foreground/30 hover:bg-[var(--surface)] ${focusClasses}`,
+  outline: `border border-[var(--divider)] bg-transparent text-[var(--text)] hover:border-foreground/30 hover:bg-[var(--surface2)] ${focusClasses}`,
   ghost: `text-[var(--text)] hover:bg-[var(--surface2)] ${focusClasses}`,
-  destructive: `bg-[hsl(var(--color-destructive))] text-[hsl(var(--color-destructive-foreground))] hover:bg-[hsl(var(--color-destructive))] hover:brightness-95 ${focusClasses}`,
+  destructive: `bg-[hsl(var(--color-destructive))] text-[hsl(var(--color-destructive-foreground))] hover:brightness-95 ${focusClasses}`,
 }
 
 const sizeClasses = {
@@ -36,7 +36,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <Comp
         ref={ref}
         className={cn(
-          'inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors disabled:pointer-events-none disabled:opacity-50',
+          'inline-flex items-center justify-center gap-2 rounded-md font-medium transition-all disabled:pointer-events-none disabled:opacity-50',
           variantClasses[variant],
           sizeClasses[size],
           className,

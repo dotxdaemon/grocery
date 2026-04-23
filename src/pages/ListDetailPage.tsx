@@ -282,14 +282,14 @@ function TopBar({
   screenshotInputRef,
 }: TopBarProps) {
   return (
-    <div className="sticky top-4 z-30 -mx-4 bg-background/90 px-4 pb-3 pt-2 backdrop-blur">
+    <div className="sticky top-4 z-30 -mx-4 border-b border-border/40 bg-background/80 px-4 pb-3 pt-2 backdrop-blur-xl">
       <div className="flex items-center justify-between gap-2">
         <Button variant="ghost" size="sm" onClick={onBack} aria-label="Back">
           <ArrowLeft className="size-4" aria-hidden />
           <span>Back</span>
         </Button>
         <div className="flex flex-1 flex-col items-center gap-1 text-center">
-          <h1 className="text-xl font-semibold leading-tight">{name}</h1>
+          <h1 className="truncate text-xl font-semibold leading-tight tracking-tight">{name}</h1>
         </div>
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="sm" aria-label="Open list menu" onClick={onOpenMenu}>
@@ -304,14 +304,19 @@ function TopBar({
           onSubmit()
         }}
       >
-        <Input
-          ref={inputRef}
-          value={quickAddValue}
-          onChange={(event) => onQuickAddChange(event.target.value)}
-          placeholder="Add an item"
-          className="w-full"
-          aria-label="Add an item"
-        />
+        <div className="relative w-full">
+          <Input
+            ref={inputRef}
+            value={quickAddValue}
+            onChange={(event) => onQuickAddChange(event.target.value)}
+            placeholder="Add an item — press / to focus"
+            className="w-full pr-10"
+            aria-label="Add an item"
+          />
+          <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-border/70 bg-[var(--surface2)] px-1.5 py-0.5 font-mono text-[10px] font-semibold text-muted-foreground sm:inline-block">
+            /
+          </kbd>
+        </div>
         <Input
           ref={screenshotInputRef}
           type="file"
@@ -487,6 +492,20 @@ export function ListDetailPage() {
   useEffect(() => {
     if (safeId) setActiveList(safeId)
   }, [safeId, setActiveList])
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== '/') return
+      const target = event.target as HTMLElement | null
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return
+      }
+      event.preventDefault()
+      addInputRef.current?.focus()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   const sortMode = list?.sortMode ?? 'category'
   const categoryOrder = list?.categoryOrder ?? DEFAULT_CATEGORY_ORDER
@@ -693,9 +712,18 @@ export function ListDetailPage() {
         {renderGroups(groupedUnpurchased)}
 
         {unpurchasedItems.length === 0 && purchasedItems.length === 0 && (
-          <div className="rounded-2xl border border-border/60 bg-card/70 p-6 text-center">
-            <p className="font-semibold">No items yet</p>
-            <p className="text-sm text-muted-foreground">Use the add bar to capture ingredients fast.</p>
+          <div className="flex flex-col items-center gap-3 rounded-2xl border border-border/60 bg-card/70 p-8 text-center backdrop-blur">
+            <div
+              className="prism-shimmer size-10 rounded-full opacity-80"
+              style={{ backgroundImage: 'var(--prism-gradient)' }}
+              aria-hidden
+            />
+            <div className="space-y-1">
+              <p className="font-semibold">Empty list</p>
+              <p className="text-sm text-muted-foreground">
+                Type to add, paste multiple lines, or upload a screenshot.
+              </p>
+            </div>
           </div>
         )}
 

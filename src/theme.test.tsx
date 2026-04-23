@@ -27,19 +27,19 @@ describe('Berry Mint (Mint Primary) theme', () => {
     vi.unstubAllEnvs()
   })
 
-  it('defines the mint-led palette tokens', () => {
+  it('defines the editorial palette tokens', () => {
     const cssPath = path.resolve(__dirname, 'index.css')
     const css = fs.readFileSync(cssPath, 'utf-8')
     const expectedTokens = [
-      '--bg: #F7FBF9;',
+      '--bg: #F4F7F6;',
       '--surface: #FFFFFF;',
-      '--surface2: #EEF7F2;',
-      '--text: #111827;',
+      '--surface2: #ECF2EF;',
+      '--text: #0B1117;',
       '--muted: #5F6B66;',
-      '--divider: #DDE7E1;',
-      '--primary: #34D399;',
-      '--primary-hover: #10B981;',
-      '--on-primary: #053321;',
+      '--divider: #D7DFDB;',
+      '--primary: #0B1117;',
+      '--primary-hover: #1F2937;',
+      '--on-primary: #F4F7F6;',
       '--chip: #E6FAF1;',
       '--accent: #E11D48;',
       '--on-accent: #FFFFFF;',

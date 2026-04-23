@@ -2,6 +2,7 @@
 // ABOUTME: Boots state, renders navigation, and wires pages together.
 import { useEffect, useMemo, useRef } from 'react'
 import { Link, Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom'
+import { Moon, Sun } from 'lucide-react'
 import { useAppStore } from './state/appStore'
 import { ListDetailPage } from './pages/ListDetailPage'
 import { ListsPage } from './pages/ListsPage'
@@ -16,27 +17,41 @@ function NavLinks() {
     { to: '/settings', label: 'Settings' },
   ]
   return (
-    <nav className="flex gap-2 text-xs font-semibold uppercase tracking-[0.08em]">
-      {links.map((link) => (
-        <Link
-          key={link.to}
-          to={link.to}
-          className={cn(
-            'relative overflow-hidden rounded-full border border-border/60 px-4 py-2 transition',
-            'hover:border-[rgba(var(--primary-rgb),0.4)] hover:text-[hsl(var(--color-primary))]',
-            location.pathname === link.to
-              ? 'bg-[rgba(var(--primary-rgb),0.15)] text-[hsl(var(--color-accent))] shadow-[0_0_24px_rgba(var(--primary-rgb),0.2)]'
-              : 'text-muted-foreground',
-          )}
-        >
-          <span
-            className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[hsl(var(--color-primary))] to-transparent opacity-60"
-            aria-hidden
-          />
-          <span className="relative">{link.label}</span>
-        </Link>
-      ))}
+    <nav className="flex gap-2 text-xs font-semibold uppercase tracking-[0.12em]">
+      {links.map((link) => {
+        const isActive = location.pathname === link.to
+        return (
+          <Link
+            key={link.to}
+            to={link.to}
+            className={cn(
+              'relative overflow-hidden rounded-full border px-4 py-2 transition',
+              isActive
+                ? 'prism-border border-transparent text-foreground'
+                : 'border-border/60 text-muted-foreground hover:border-foreground/40 hover:text-foreground',
+            )}
+          >
+            <span className="relative">{link.label}</span>
+          </Link>
+        )
+      })}
     </nav>
+  )
+}
+
+function ThemeToggle() {
+  const themeMode = useAppStore((state) => state.preferences.themeMode ?? 'light')
+  const setThemeMode = useAppStore((state) => state.setThemeMode)
+  const isDark = themeMode === 'dark'
+  return (
+    <button
+      type="button"
+      onClick={() => setThemeMode(isDark ? 'light' : 'dark')}
+      aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+      className="relative inline-flex size-9 items-center justify-center rounded-full border border-border/60 bg-background/50 text-foreground transition hover:border-foreground/40 hover:bg-background/80"
+    >
+      {isDark ? <Sun className="size-4" aria-hidden /> : <Moon className="size-4" aria-hidden />}
+    </button>
   )
 }
 
@@ -58,9 +73,15 @@ function AppShell() {
   if (status === 'idle') {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <div className="size-12 animate-pulse rounded-full bg-primary/30" aria-hidden />
-          <p className="text-lg font-semibold">Loading your groceries...</p>
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div
+            className="prism-shimmer size-14 rounded-full"
+            style={{ backgroundImage: 'var(--prism-gradient)' }}
+            aria-hidden
+          />
+          <p className="text-sm font-medium uppercase tracking-[0.28em] text-muted-foreground">
+            Loading
+          </p>
         </div>
       </div>
     )
@@ -68,42 +89,45 @@ function AppShell() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div
-          className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(var(--primary-rgb),0.16),transparent_36%),radial-gradient(circle_at_80%_0%,rgba(var(--accent-rgb),0.12),transparent_32%),radial-gradient(circle_at_75%_75%,rgba(var(--primary-hover-rgb),0.14),transparent_38%)] blur-3xl"
-          aria-hidden
-        />
-        <div
-          className="absolute inset-0 bg-[linear-gradient(115deg,rgba(255,255,255,0.05)_0%,rgba(255,255,255,0.02)_40%,rgba(255,255,255,0)_65%)]"
-          aria-hidden
-        />
-        <div
-          className="absolute inset-0 bg-[linear-gradient(rgba(var(--divider-rgb),0.45)_1px,transparent_1px),linear-gradient(90deg,rgba(var(--divider-rgb),0.45)_1px,transparent_1px)] opacity-80"
-          style={{ backgroundSize: '140px 140px' }}
-          aria-hidden
-        />
+      <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
+        <div className="absolute -left-24 top-20 size-[520px] rounded-full opacity-60 blur-3xl"
+          style={{ background: 'radial-gradient(closest-side, hsl(var(--prism-1) / 0.35), transparent 70%)' }} />
+        <div className="absolute -right-20 top-0 size-[420px] rounded-full opacity-60 blur-3xl"
+          style={{ background: 'radial-gradient(closest-side, hsl(var(--prism-2) / 0.30), transparent 70%)' }} />
+        <div className="absolute bottom-0 left-1/3 h-[360px] w-[520px] rounded-full opacity-50 blur-3xl"
+          style={{ background: 'radial-gradient(closest-side, hsl(var(--prism-5) / 0.28), transparent 70%)' }} />
       </div>
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 shadow-[0_10px_30px_rgba(0,0,0,0.45)] backdrop-blur">
-        <div className="relative mx-auto flex max-w-6xl items-center justify-between p-4">
-          <div className="relative flex items-center gap-3">
-            <div className="absolute -left-3 -top-3 size-12 rounded-full bg-primary/25 blur-2xl" aria-hidden />
-            <Link to="/" className="relative flex flex-col leading-none no-underline">
-              <span className="text-xs font-semibold uppercase tracking-[0.28em] text-[hsl(var(--color-accent))]">
-                grocery list
-              </span>
-            </Link>
+
+      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur-xl">
+        <div className="relative mx-auto flex max-w-6xl items-center justify-between gap-3 p-4">
+          <Link to="/" className="group relative flex items-center gap-3 no-underline">
+            <span
+              className="prism-shimmer inline-block size-2.5 rounded-full"
+              style={{ backgroundImage: 'var(--prism-gradient)' }}
+              aria-hidden
+            />
+            <span className="prism-text prism-shimmer text-[11px] font-bold uppercase tracking-[0.38em]">
+              grocery
+            </span>
+          </Link>
+          <div className="flex items-center gap-2">
+            {!isListView && <NavLinks />}
+            <ThemeToggle />
           </div>
-          {!isListView && <NavLinks />}
         </div>
-        <div className="h-px bg-gradient-to-r from-transparent via-[hsl(var(--color-primary))] to-transparent opacity-70" aria-hidden />
+        <div
+          className="h-px opacity-70"
+          style={{ backgroundImage: 'var(--prism-gradient)' }}
+          aria-hidden
+        />
         {error && (
           <div className="bg-amber-900/90 px-4 py-2 text-sm text-amber-100 backdrop-blur">
             {error}
           </div>
         )}
       </header>
+
       <main className="relative mx-auto max-w-5xl px-4 pb-24 pt-6">
-        <div className="pointer-events-none absolute inset-x-8 top-2 h-20 rounded-full bg-primary/10 blur-3xl" aria-hidden />
         <Routes>
           <Route path="/" element={<ListsPage />} />
           <Route path="/list/:id" element={<ListDetailPage />} />

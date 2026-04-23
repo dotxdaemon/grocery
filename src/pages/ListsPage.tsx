@@ -69,19 +69,22 @@ export function ListsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Your lists</h1>
-          <p className="text-sm text-muted-foreground">
-            Create separate lists per store or occasion. Reorder to match your routine.
+    <div className="space-y-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.38em] text-muted-foreground">
+            Your shelves
+          </p>
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Lists</h1>
+          <p className="max-w-md text-sm text-muted-foreground">
+            A list per store, per occasion, per mood. Reorder to match your route.
           </p>
         </div>
         <form onSubmit={handleCreate} className="flex w-full max-w-md items-center gap-2">
           <Input
             value={newListName}
             onChange={(event) => setNewListName(event.target.value)}
-            placeholder="Add a list (e.g., Costco, Safeway)"
+            placeholder="New list (e.g., Costco)"
             aria-label="New list name"
           />
           <Button type="submit" disabled={!newListName.trim()}>
@@ -93,10 +96,12 @@ export function ListsPage() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {lists.map((list) => {
           const count = counts[list.id] ?? { total: 0, purchased: 0 }
+          const progress = count.total === 0 ? 0 : Math.round((count.purchased / count.total) * 100)
+          const remaining = Math.max(0, count.total - count.purchased)
           return (
             <Card
               key={list.id}
-              className="flex flex-col gap-3"
+              className="flex cursor-pointer flex-col gap-4"
               data-testid={`list-card-${list.id}`}
               onClick={(event) => {
                 if (renamingId === list.id) return
@@ -106,7 +111,7 @@ export function ListsPage() {
               }}
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="space-y-1">
+                <div className="min-w-0 space-y-1">
                   {renamingId === list.id ? (
                     <div className="flex items-center gap-2">
                       <Input
@@ -120,7 +125,7 @@ export function ListsPage() {
                       </Button>
                     </div>
                   ) : (
-                    <h2 className="text-lg font-semibold">
+                    <h2 className="truncate text-lg font-semibold">
                       <Link
                         to={`/list/${list.id}`}
                         className="text-foreground no-underline transition hover:text-[hsl(var(--color-accent))] focus-visible:underline"
@@ -131,10 +136,10 @@ export function ListsPage() {
                     </h2>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    Updated {formatRelativeTime(list.updatedAt)} • {count.total} items ({count.purchased} purchased)
+                    Updated {formatRelativeTime(list.updatedAt)}
                   </p>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex shrink-0 items-center gap-1">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -155,6 +160,32 @@ export function ListsPage() {
                   >
                     ↓
                   </Button>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-baseline justify-between text-xs text-muted-foreground">
+                  <span>
+                    <span className="text-base font-semibold text-foreground">{remaining}</span>{' '}
+                    {remaining === 1 ? 'item left' : 'items left'}
+                  </span>
+                  <span className="tabular-nums">{count.purchased}/{count.total}</span>
+                </div>
+                <div
+                  className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface2)]"
+                  role="progressbar"
+                  aria-valuenow={progress}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={`${progress}% purchased`}
+                >
+                  <div
+                    className="prism-shimmer h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${progress}%`,
+                      backgroundImage: 'var(--prism-gradient)',
+                    }}
+                  />
                 </div>
               </div>
 
@@ -184,8 +215,18 @@ export function ListsPage() {
       </div>
 
       {lists.length === 0 && (
-        <Card className="text-center text-muted-foreground">
-          <p>No lists yet. Create your first list to get started.</p>
+        <Card className="flex flex-col items-center gap-3 py-12 text-center">
+          <div
+            className="prism-shimmer size-12 rounded-full opacity-80"
+            style={{ backgroundImage: 'var(--prism-gradient)' }}
+            aria-hidden
+          />
+          <div className="space-y-1">
+            <p className="text-lg font-semibold">Start your first list</p>
+            <p className="text-sm text-muted-foreground">
+              Type a name above — Costco, Safeway, Friday dinner. Whatever.
+            </p>
+          </div>
         </Card>
       )}
     </div>
