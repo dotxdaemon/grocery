@@ -81,6 +81,13 @@ describe('ListDetailPage header add bar', () => {
     expect(screen.getByText('Bread')).toBeInTheDocument()
   })
 
+  it('renders typed add text in black', () => {
+    renderListPage()
+    const addInput = screen.getByPlaceholderText(/add an item/i)
+
+    expect(addInput.className).toContain('text-black')
+  })
+
   it('adds via enter and keeps the add input focused', async () => {
     const addItemQuick = vi.fn().mockResolvedValue(undefined)
     useAppStore.setState((state) => ({ ...state, addItemQuick }))

@@ -310,7 +310,7 @@ function TopBar({
             value={quickAddValue}
             onChange={(event) => onQuickAddChange(event.target.value)}
             placeholder="Add an item — press / to focus"
-            className="w-full pr-10"
+            className="w-full pr-10 text-black caret-black"
             aria-label="Add an item"
           />
           <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-border/70 bg-[var(--surface2)] px-1.5 py-0.5 font-mono text-[10px] font-semibold text-muted-foreground sm:inline-block">
